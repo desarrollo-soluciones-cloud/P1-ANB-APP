@@ -26,7 +26,7 @@ func NewUserService(userRepo UserRepository, authService auth.AuthService) UserS
 	}
 }
 
-func (s *userService) Register(ctx *gin.Context, req *CreateUserRequest) (*UserResponse, error) {
+func (s *userService) SignUp(ctx *gin.Context, req *CreateUserRequest) (*UserResponse, error) {
 	existingUser, err := s.userRepo.FindByEmail(req.Email)
 	if err != nil {
 		return nil, errors.New("database error while checking email")

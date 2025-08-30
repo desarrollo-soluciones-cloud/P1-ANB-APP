@@ -2,15 +2,28 @@ package video
 
 import "github.com/gin-gonic/gin"
 
-func RegisterVideoRoutes(router *gin.RouterGroup, videoController *VideoController, authMiddleware gin.HandlerFunc) {
-	videoRoutes := router.Group("/videos", authMiddleware)
+func SignUpVideoRoutes(router *gin.RouterGroup, vc *VideoController, authMiddleware gin.HandlerFunc) {
+
+	protectedRoutes := router.Group("/videos", authMiddleware)
 	{
-		videoRoutes.POST("/upload", videoController.Upload)
+		// POST /api/v1/videos/upload
+		protectedRoutes.POST("/upload", vc.Upload)
 
-		videoRoutes.GET("", videoController.ListMyVideos)
+		// GET /api/v1/videos
+		protectedRoutes.GET("", vc.ListMyVideos)
 
-		videoRoutes.GET("/:video_id", videoController.GetVideoByID)
+		// GET /api/v1/videos/:video_id
+		protectedRoutes.GET("/:video_id", vc.GetVideoByID)
 
-		videoRoutes.DELETE("/:video_id", videoController.DeleteVideo)
+		// DELETE /api/v1/videos/:video_id
+		protectedRoutes.DELETE("/:video_id", vc.DeleteVideo)
+
+		// POST /api/v1/videos/:video_id/mark-processed RUTA DE PRUEBA
+		protectedRoutes.POST("/:video_id/mark-processed", vc.MarkVideoAsProcessed)
+	}
+
+	publicRoutes := router.Group("/public/videos")
+	{
+		publicRoutes.GET("", vc.ListPublicVideos)
 	}
 }

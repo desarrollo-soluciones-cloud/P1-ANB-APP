@@ -59,3 +59,18 @@ func (r *videoRepository) Delete(videoID uint) error {
 
 	return nil
 }
+
+func (r *videoRepository) FindPublic() ([]Video, error) {
+	var videos []Video
+
+	result := r.db.Where("status = ?", "processed").Order("vote_count DESC").Find(&videos)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return videos, nil
+}
+
+func (r *videoRepository) Update(video *Video) error {
+	result := r.db.Save(video)
+	return result.Error
+}

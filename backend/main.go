@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
+	"github.com/hibiken/asynq"
 	"gorm.io/gorm"
 )
 
@@ -21,6 +22,13 @@ func main() {
 
 	jwtSecret := "MI_CLAVE_SECRETA_SUPREMAMENTE_SEGURA"
 
+	// --- 2. CREAMOS EL CLIENTE DE ASYNQ ---
+	redisOpt := asynq.RedisClientOpt{
+		Addr: "localhost:6379", // La dirección de nuestro Redis en Docker
+	}
+	asynqClient := asynq.NewClient(redisOpt)
+	defer asynqClient.Close()
+
 	// Auth
 	authSvc := auth.NewAuthService(jwtSecret)
 	authMiddleware := authSvc.AuthMiddleware()
@@ -32,7 +40,7 @@ func main() {
 
 	// Video
 	videoRepo := video.NewVideoRepository(db)
-	videoSvc := video.NewVideoService(videoRepo)
+	videoSvc := video.NewVideoService(videoRepo, asynqClient)
 	videoController := video.NewVideoController(videoSvc)
 
 	// Vote <-- AÑADIMOS LOS COMPONENTES DE VOTE
@@ -43,13 +51,13 @@ func main() {
 	router := gin.Default()
 	apiV1 := router.Group("/api/v1")
 	{
-		user.RegisterUserRoutes(apiV1, userController)
+		user.SignUpUserRoutes(apiV1, userController)
 
-		video.RegisterVideoRoutes(apiV1, videoController, authMiddleware)
+		video.SignUpVideoRoutes(apiV1, videoController, authMiddleware)
 
-		vote.RegisterVoteRoutes(apiV1, voteController, authMiddleware)
+		vote.SignUpVoteRoutes(apiV1, voteController, authMiddleware)
 	}
 
-	log.Println("Server is running on port 8080")
-	router.Run(":8080")
+	log.Println("Server is running on port 9090")
+	router.Run(":9090")
 }

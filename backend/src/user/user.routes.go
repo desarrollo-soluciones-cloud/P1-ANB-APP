@@ -2,10 +2,10 @@ package user
 
 import "github.com/gin-gonic/gin"
 
-func RegisterUserRoutes(router *gin.RouterGroup, userController *UserController) {
+func SignUpUserRoutes(router *gin.RouterGroup, userController *UserController) {
 	userRoutes := router.Group("/auth")
 	{
-		userRoutes.POST("/signup", userController.Register)
+		userRoutes.POST("/signup", userController.SignUp)
 
 		userRoutes.POST("/login", userController.Login)
 	}
