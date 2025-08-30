@@ -15,9 +15,6 @@ type Video struct {
 	VoteCount    int        `json:"votes" gorm:"default:0"`
 	UploadedAt   time.Time  `json:"uploaded_at"`
 	ProcessedAt  *time.Time `json:"processed_at,omitempty"`
-	IsPublic     bool       `json:"is_public" gorm:"default:false"`
 
-	// Solo relación con User
-	User user.User `json:"user" gorm:"foreignKey:UserID"`
-	// NO incluyas []vote.Vote aquí para evitar dependencia circular
+	User user.User `json:"-" gorm:"foreignKey:UserID"`
 }
