@@ -1,8 +1,8 @@
 package user
 
 import (
+	"anb-app/src/auth"
 	"errors"
-	"project-one/src/auth"
 	"time"
 
 	"github.com/gin-gonic/gin"

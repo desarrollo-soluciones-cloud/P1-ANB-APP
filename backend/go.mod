@@ -1,4 +1,4 @@
-module project-one
+module anb-app
 
 go 1.24.6
 

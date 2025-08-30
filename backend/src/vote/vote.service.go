@@ -1,8 +1,8 @@
 package vote
 
 import (
+	"anb-app/src/video"
 	"errors"
-	"project-one/src/video"
 	"time"
 
 	"gorm.io/gorm"

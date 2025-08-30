@@ -1,11 +1,11 @@
 package main
 
 import (
+	"anb-app/src/auth"
+	"anb-app/src/user"
+	"anb-app/src/video"
+	"anb-app/src/vote"
 	"log"
-	"project-one/src/auth"
-	"project-one/src/user"
-	"project-one/src/video"
-	"project-one/src/vote"
 
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
