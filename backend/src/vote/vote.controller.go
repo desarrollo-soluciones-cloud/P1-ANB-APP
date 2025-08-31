@@ -30,10 +30,9 @@ func (vc *VoteController) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID format"})
 		return
 	}
-
 	userIDClaim, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authentication"}) // <-- Mensaje ajustado
 		return
 	}
 	userID := userIDClaim.(uint)
@@ -41,16 +40,23 @@ func (vc *VoteController) Create(c *gin.Context) {
 	err = vc.voteService.CreateVote(userID, uint(videoID))
 	if err != nil {
 		if strings.Contains(err.Error(), "already voted") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "You have already voted for this video."})
+			// 400 Bad Request
+			c.JSON(http.StatusBadRequest, gin.H{"error": "You have already voted for this video."}) // <-- Mensaje ajustado
+			return
+		}
+		// AÑADIMOS ESTE CASO PARA EL 404
+		if strings.Contains(err.Error(), "video not found") {
+			// 404 Not Found
+			c.JSON(http.StatusNotFound, gin.H{"error": "Video not found."})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Vote registered successfully."})
+	// 200 OK
+	c.JSON(http.StatusOK, gin.H{"message": "Vote successfully registered."}) // <-- Mensaje ajustado
 }
-
 func (vc *VoteController) Delete(c *gin.Context) {
 	videoIDStr := c.Param("video_id")
 	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
@@ -58,10 +64,9 @@ func (vc *VoteController) Delete(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID format"})
 		return
 	}
-
 	userIDClaim, exists := c.Get("userID")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authentication."})
 		return
 	}
 	userID := userIDClaim.(uint)
@@ -69,12 +74,14 @@ func (vc *VoteController) Delete(c *gin.Context) {
 	err = vc.voteService.DeleteVote(userID, uint(videoID))
 	if err != nil {
 		if strings.Contains(err.Error(), "does not exist") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "You have not voted for this video yet."})
+			// 404 Not Found
+			c.JSON(http.StatusNotFound, gin.H{"error": "Vote is non existent, cannot be deleted."}) // <-- Mensaje ajustado
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Vote removed successfully."})
+	// 200 OK
+	c.JSON(http.StatusOK, gin.H{"message": "Voto successfully deleted."}) // <-- Mensaje ajustado
 }

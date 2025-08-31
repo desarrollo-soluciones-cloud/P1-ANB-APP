@@ -1,30 +1,46 @@
 package video
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hibiken/asynq"
 )
+
+const (
+	TypeVideoProcess = "task:video:process"
+)
+
+type VideoProcessPayload struct {
+	VideoID uint
+}
 
 type VideoRepository interface {
 	Create(video *Video) (*Video, error)
 	FindByUserID(userID uint) ([]Video, error)
 	FindByID(videoID uint) (*Video, error)
 	Delete(videoID uint) error
+	FindPublic() ([]Video, error)
+	Update(video *Video) error
 }
 
 type videoService struct {
-	videoRepo VideoRepository
+	videoRepo   VideoRepository
+	asynqClient *asynq.Client
 }
 
-func NewVideoService(videoRepo VideoRepository) VideoService {
+func NewVideoService(videoRepo VideoRepository, asynqClient *asynq.Client) VideoService {
 	return &videoService{
-		videoRepo: videoRepo,
+		videoRepo:   videoRepo,
+		asynqClient: asynqClient,
 	}
 }
 
@@ -55,6 +71,26 @@ func (s *videoService) Upload(ctx *gin.Context, req *UploadVideoRequest, file *m
 		os.Remove(filePath)
 		return nil, err
 	}
+
+	// --- LÓGICA PARA ENCOLAR LA TAREA ---
+	// 1. Crear el payload de la tarea.
+	payload, err := json.Marshal(VideoProcessPayload{VideoID: createdVideo.ID})
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Crear una nueva tarea de Asynq.
+	task := asynq.NewTask(TypeVideoProcess, payload)
+
+	// 3. Encolar la tarea en Redis.
+	taskInfo, err := s.asynqClient.Enqueue(task)
+	if err != nil {
+		// Si encolar la tarea falla, podríamos querer deshacer la subida,
+		// pero por ahora solo registraremos el error.
+		return nil, err
+	}
+	log.Printf("---> Enqueued task to process video ID: %d, Task ID: %s", createdVideo.ID, taskInfo.ID)
+	// --- FIN DE LA LÓGICA DE LA TAREA ---
 
 	response := &VideoResponse{
 		ID:           createdVideo.ID,
@@ -149,4 +185,73 @@ func (s *videoService) Delete(videoID uint, userID uint) error {
 	_ = os.Remove(video.OriginalURL)
 
 	return nil
+}
+
+func (s *videoService) ListPublic() ([]VideoResponse, error) {
+	videos, err := s.videoRepo.FindPublic()
+	if err != nil {
+		return nil, err
+	}
+
+	var videoResponses []VideoResponse
+	for _, video := range videos {
+		response := VideoResponse{
+			ID:           video.ID,
+			UserID:       video.UserID,
+			Title:        video.Title,
+			Status:       video.Status,
+			OriginalURL:  video.OriginalURL,
+			ProcessedURL: video.ProcessedURL,
+			VoteCount:    video.VoteCount,
+			UploadedAt:   video.UploadedAt,
+			ProcessedAt:  video.ProcessedAt,
+		}
+		videoResponses = append(videoResponses, response)
+	}
+
+	return videoResponses, nil
+}
+
+func (s *videoService) MarkAsProcessed(videoID uint, userID uint) (*VideoResponse, error) {
+	// 1. Buscar el video para asegurarse de que existe y es del usuario.
+	video, err := s.videoRepo.FindByID(videoID)
+	if err != nil {
+		return nil, err
+	}
+	if video == nil {
+		return nil, errors.New("video not found")
+	}
+
+	// 2. Autorización: verificar que el video pertenece al usuario.
+	if video.UserID != userID {
+		return nil, errors.New("user does not have permission to modify this video")
+	}
+
+	// 3. Actualizar los campos del video.
+	video.Status = "processed"
+	now := time.Now()
+	video.ProcessedAt = &now
+	// Creamos una URL de prueba para el video procesado.
+	baseName := strings.TrimSuffix(filepath.Base(video.OriginalURL), filepath.Ext(video.OriginalURL))
+	video.ProcessedURL = fmt.Sprintf("./uploads/processed/%s.mp4", baseName)
+
+	// 4. Guardar los cambios en la base de datos.
+	if err := s.videoRepo.Update(video); err != nil {
+		return nil, err
+	}
+
+	// 5. Mapear y devolver la entidad actualizada.
+	response := &VideoResponse{
+		ID:           video.ID,
+		UserID:       video.UserID,
+		Title:        video.Title,
+		Status:       video.Status,
+		OriginalURL:  video.OriginalURL,
+		ProcessedURL: video.ProcessedURL,
+		VoteCount:    video.VoteCount,
+		UploadedAt:   video.UploadedAt,
+		ProcessedAt:  video.ProcessedAt,
+	}
+
+	return response, nil
 }

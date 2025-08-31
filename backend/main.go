@@ -2,24 +2,52 @@ package main
 
 import (
 	"anb-app/src/auth"
+	"anb-app/src/database"
 	"anb-app/src/user"
 	"anb-app/src/video"
 	"anb-app/src/vote"
+	"context"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/glebarez/sqlite"
-	"gorm.io/gorm"
+	"github.com/hibiken/asynq"
+	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 )
 
-func main() {
-	db, err := gorm.Open(sqlite.Open("anb.db"), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("failed to connect database: %v", err)
-	}
-	db.AutoMigrate(&user.User{}, &video.Video{}, &vote.Vote{})
+var ctx = context.Background()
 
-	jwtSecret := "MI_CLAVE_SECRETA_SUPREMAMENTE_SEGURA"
+func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Warning: File .env could'nt be found")
+	}
+
+	db := database.ConnectDB()
+
+	database.MigrateTables(db)
+
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	redisAddr := os.Getenv("REDIS_ADDR")
+
+	serverPort := os.Getenv("SERVER_PORT")
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: redisAddr,
+	})
+	if _, err := redisClient.Ping(ctx).Result(); err != nil {
+		log.Fatalf("Could not connect to Redis for caching: %v", err)
+	}
+	defer redisClient.Close()
+
+	log.Printf("Conectando a Redis en: %s", redisAddr)
+	redisOpt := asynq.RedisClientOpt{
+		Addr: redisAddr,
+	}
+	asynqClient := asynq.NewClient(redisOpt)
+	defer asynqClient.Close()
 
 	// Auth
 	authSvc := auth.NewAuthService(jwtSecret)
@@ -27,29 +55,51 @@ func main() {
 
 	// User
 	userRepo := user.NewUserRepository(db)
-	userSvc := user.NewUserService(userRepo, authSvc)
+	userSvc := user.NewUserService(userRepo, authSvc, redisClient)
 	userController := user.NewUserController(userSvc)
 
 	// Video
 	videoRepo := video.NewVideoRepository(db)
-	videoSvc := video.NewVideoService(videoRepo)
+	videoSvc := video.NewVideoService(videoRepo, asynqClient)
 	videoController := video.NewVideoController(videoSvc)
 
-	// Vote <-- AÑADIMOS LOS COMPONENTES DE VOTE
+	// Vote
 	voteRepo := vote.NewVoteRepository(db)
 	voteSvc := vote.NewVoteService(voteRepo, db)
 	voteController := vote.NewVoteController(voteSvc)
 
 	router := gin.Default()
+
+	router.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	})
+
 	apiV1 := router.Group("/api/v1")
 	{
-		user.RegisterUserRoutes(apiV1, userController)
-
-		video.RegisterVideoRoutes(apiV1, videoController, authMiddleware)
-
-		vote.RegisterVoteRoutes(apiV1, voteController, authMiddleware)
+		user.SignUpUserRoutes(apiV1, userController)
+		video.SignUpVideoRoutes(apiV1, videoController, authMiddleware)
+		vote.SignUpVoteRoutes(apiV1, voteController, authMiddleware)
 	}
 
-	log.Println("Server is running on port 8080")
-	router.Run(":8080")
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status":   "ok",
+			"message":  "ANB API is running",
+			"database": "connected",
+			"redis":    "connected",
+		})
+	})
+
+	if err := router.Run(":" + serverPort); err != nil {
+		log.Fatalf("Error, server couldn't start: %v", err)
+	}
 }
