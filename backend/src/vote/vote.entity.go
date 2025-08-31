@@ -1,7 +1,7 @@
 package vote
 
 import (
-	"project-one/src/user"
+	"anb-app/src/user"
 	"time"
 )
 
