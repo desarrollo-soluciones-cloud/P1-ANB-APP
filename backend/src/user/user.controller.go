@@ -11,6 +11,7 @@ import (
 type UserService interface {
 	SignUp(ctx *gin.Context, req *CreateUserRequest) (*UserResponse, error)
 	Login(ctx *gin.Context, req *LoginRequest) (*TokenResponse, error)
+	GetRankings() ([]RankingResponse, error) // <-- NUEVO
 }
 
 type UserController struct {
@@ -76,4 +77,14 @@ func (uc *UserController) Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, tokenResponse)
+}
+
+func (uc *UserController) GetRankings(c *gin.Context) {
+	rankings, err := uc.userService.GetRankings()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve rankings."})
+		return
+	}
+
+	c.JSON(http.StatusOK, rankings)
 }
