@@ -55,12 +55,12 @@ func main() {
 
 	// User
 	userRepo := user.NewUserRepository(db)
-	userSvc := user.NewUserService(userRepo, authSvc, redisClient)
+	userSvc := user.NewUserService(userRepo, authSvc)
 	userController := user.NewUserController(userSvc)
 
 	// Video
 	videoRepo := video.NewVideoRepository(db)
-	videoSvc := video.NewVideoService(videoRepo, asynqClient)
+	videoSvc := video.NewVideoService(videoRepo, asynqClient, redisClient)
 	videoController := video.NewVideoController(videoSvc)
 
 	// Vote
