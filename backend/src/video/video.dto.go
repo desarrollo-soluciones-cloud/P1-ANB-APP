@@ -17,3 +17,11 @@ type VideoResponse struct {
 	UploadedAt   time.Time  `json:"uploaded_at"`
 	ProcessedAt  *time.Time `json:"processed_at,omitempty"`
 }
+
+type RankingResponse struct {
+    Position    int    `json:"position"`
+    VideoID     uint   `json:"video_id"`
+    Title       string `json:"title"`
+    AuthorName  string `json:"author_name"`
+    VoteCount   int    `json:"votes"`
+}

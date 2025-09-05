@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres-anb:
+    image: postgres:15-alpine
+    container_name: postgres-anb
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5433"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis-anb:
+    image: redis:alpine
+    container_name: redis-anb
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  api:
+    container_name: api-anb
+    build:
+      context: ./backend 
+      dockerfile: Dockerfile
+    command: /api_server
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    env_file:
+      - .env
+    depends_on:
+      - postgres-anb
+      - redis-anb
+    restart: unless-stopped
+
+  worker:
+    container_name: worker-anb
+    build:
+      context: ./backend 
+      dockerfile: Dockerfile
+    command: /worker_server
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/intro:/app/intro
+    env_file:
+      - .env
+    depends_on:
+      - postgres-anb
+      - redis-anb
+    restart: unless-stopped
+
+  # --- SERVICIO DE FRONTEND (COMENTADO) ---
+  # Descomenta este bloque cuando quieras añadir tu frontend
+  # frontend:
+  #   container_name: frontend-anb
+  #   build:
+  #     # Asume que tienes un Dockerfile dentro de tu carpeta 'frontend'
+  #     context: ./frontend 
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "3000:3000" # Por ejemplo, para una app de React/Vue
+  #   depends_on:
+  #     - api
+
+volumes:
+  postgres-data:
+  redis-data:

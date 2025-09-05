@@ -2,35 +2,27 @@ package user
 
 import (
 	"anb-app/src/auth"
-	"context"
-	"encoding/json"
 	"errors"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
-
-var ctx = context.Background()
 
 type UserRepository interface {
 	Create(user *User) (*User, error)
 	FindByEmail(email string) (*User, error)
-	GetRankings() ([]RankingResponse, error) // <-- NUEVO
 }
 
 type userService struct {
 	userRepo    UserRepository
 	authService auth.AuthService
-	redisClient *redis.Client
 }
 
-func NewUserService(userRepo UserRepository, authService auth.AuthService, redisClient *redis.Client) UserService { // <-- CAMBIO AQUÍ
+func NewUserService(userRepo UserRepository, authService auth.AuthService) UserService {
 	return &userService{
 		userRepo:    userRepo,
 		authService: authService,
-		redisClient: redisClient,
 	}
 }
 
@@ -89,7 +81,7 @@ func (s *userService) Login(ctx *gin.Context, req *LoginRequest) (*TokenResponse
 	}
 
 	expirationTime := time.Now().Add(24 * time.Hour)
-	tokenString, err := s.authService.GenerateToken(user.ID, expirationTime) // <-- LÍNEA CORREGIDA
+	tokenString, err := s.authService.GenerateToken(user.ID, expirationTime)
 	if err != nil {
 		return nil, errors.New("could not generate token")
 	}
@@ -101,32 +93,4 @@ func (s *userService) Login(ctx *gin.Context, req *LoginRequest) (*TokenResponse
 	}
 
 	return response, nil
-}
-
-func (s *userService) GetRankings() ([]RankingResponse, error) {
-	cacheKey := "rankings"
-
-	cachedRankings, err := s.redisClient.Get(ctx, cacheKey).Result()
-	if err == nil {
-		var rankings []RankingResponse
-		json.Unmarshal([]byte(cachedRankings), &rankings)
-		return rankings, nil
-	}
-
-	if err != redis.Nil {
-		return nil, err
-	}
-
-	rankings, err := s.userRepo.GetRankings()
-	if err != nil {
-		return nil, err
-	}
-
-	jsonData, err := json.Marshal(rankings)
-	if err != nil {
-		return nil, err
-	}
-	s.redisClient.Set(ctx, cacheKey, jsonData, 2*time.Minute)
-
-	return rankings, nil
 }
