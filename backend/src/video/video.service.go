@@ -1,6 +1,7 @@
 package video
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +14,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hibiken/asynq"
+	"github.com/redis/go-redis/v9"
 )
+
+var ctx = context.Background()
 
 const (
 	TypeVideoProcess = "task:video:process"
@@ -30,17 +34,20 @@ type VideoRepository interface {
 	Delete(videoID uint) error
 	FindPublic() ([]Video, error)
 	Update(video *Video) error
+	GetRankings() ([]RankingResponse, error)
 }
 
 type videoService struct {
 	videoRepo   VideoRepository
 	asynqClient *asynq.Client
+	redisClient *redis.Client
 }
 
-func NewVideoService(videoRepo VideoRepository, asynqClient *asynq.Client) VideoService {
+func NewVideoService(videoRepo VideoRepository, asynqClient *asynq.Client, redisClient *redis.Client) VideoService {
 	return &videoService{
 		videoRepo:   videoRepo,
 		asynqClient: asynqClient,
+		redisClient: redisClient,
 	}
 }
 
@@ -72,25 +79,19 @@ func (s *videoService) Upload(ctx *gin.Context, req *UploadVideoRequest, file *m
 		return nil, err
 	}
 
-	// --- LÓGICA PARA ENCOLAR LA TAREA ---
-	// 1. Crear el payload de la tarea.
 	payload, err := json.Marshal(VideoProcessPayload{VideoID: createdVideo.ID})
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Crear una nueva tarea de Asynq.
 	task := asynq.NewTask(TypeVideoProcess, payload)
 
-	// 3. Encolar la tarea en Redis.
 	taskInfo, err := s.asynqClient.Enqueue(task)
 	if err != nil {
-		// Si encolar la tarea falla, podríamos querer deshacer la subida,
-		// pero por ahora solo registraremos el error.
+
 		return nil, err
 	}
 	log.Printf("---> Enqueued task to process video ID: %d, Task ID: %s", createdVideo.ID, taskInfo.ID)
-	// --- FIN DE LA LÓGICA DE LA TAREA ---
 
 	response := &VideoResponse{
 		ID:           createdVideo.ID,
@@ -213,7 +214,6 @@ func (s *videoService) ListPublic() ([]VideoResponse, error) {
 }
 
 func (s *videoService) MarkAsProcessed(videoID uint, userID uint) (*VideoResponse, error) {
-	// 1. Buscar el video para asegurarse de que existe y es del usuario.
 	video, err := s.videoRepo.FindByID(videoID)
 	if err != nil {
 		return nil, err
@@ -222,25 +222,20 @@ func (s *videoService) MarkAsProcessed(videoID uint, userID uint) (*VideoRespons
 		return nil, errors.New("video not found")
 	}
 
-	// 2. Autorización: verificar que el video pertenece al usuario.
 	if video.UserID != userID {
 		return nil, errors.New("user does not have permission to modify this video")
 	}
 
-	// 3. Actualizar los campos del video.
 	video.Status = "processed"
 	now := time.Now()
 	video.ProcessedAt = &now
-	// Creamos una URL de prueba para el video procesado.
 	baseName := strings.TrimSuffix(filepath.Base(video.OriginalURL), filepath.Ext(video.OriginalURL))
 	video.ProcessedURL = fmt.Sprintf("./uploads/processed/%s.mp4", baseName)
 
-	// 4. Guardar los cambios en la base de datos.
 	if err := s.videoRepo.Update(video); err != nil {
 		return nil, err
 	}
 
-	// 5. Mapear y devolver la entidad actualizada.
 	response := &VideoResponse{
 		ID:           video.ID,
 		UserID:       video.UserID,
@@ -254,4 +249,32 @@ func (s *videoService) MarkAsProcessed(videoID uint, userID uint) (*VideoRespons
 	}
 
 	return response, nil
+}
+
+func (s *videoService) GetRankings() ([]RankingResponse, error) {
+	cacheKey := "rankings:videos" // Nueva clave de caché
+
+	cachedRankings, err := s.redisClient.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var rankings []RankingResponse
+		json.Unmarshal([]byte(cachedRankings), &rankings)
+		return rankings, nil
+	}
+
+	if err != redis.Nil {
+		return nil, err
+	}
+
+	rankings, err := s.videoRepo.GetRankings()
+	if err != nil {
+		return nil, err
+	}
+
+	jsonData, err := json.Marshal(rankings)
+	if err != nil {
+		return nil, err
+	}
+	s.redisClient.Set(ctx, cacheKey, jsonData, 2*time.Minute)
+
+	return rankings, nil
 }

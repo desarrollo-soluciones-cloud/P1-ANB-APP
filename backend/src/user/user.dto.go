@@ -32,10 +32,3 @@ type TokenResponse struct {
 	TokenType   string `json:"token_type"`
 	ExpiresIn   int64  `json:"expires_in"`
 }
-
-type RankingResponse struct {
-	Position int    `json:"position"`
-	Username string `json:"username"`
-	City     string `json:"city"`
-	Votes    int    `json:"votes"`
-}

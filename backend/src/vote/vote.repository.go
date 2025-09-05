@@ -6,19 +6,16 @@ import (
 	"gorm.io/gorm"
 )
 
-// VoteRepository define la interfaz para la capa de acceso a datos de votos.
 type VoteRepository interface {
 	FindByUserAndVideo(userID uint, videoID uint) (*Vote, error)
 	Create(vote *Vote) (*Vote, error)
 	DeleteByUserAndVideo(userID uint, videoID uint) error
 }
 
-// voteRepository es la implementación de la interfaz.
 type voteRepository struct {
 	db *gorm.DB
 }
 
-// NewVoteRepository crea una nueva instancia del repositorio de votos.
 func NewVoteRepository(db *gorm.DB) VoteRepository {
 	return &voteRepository{
 		db: db,

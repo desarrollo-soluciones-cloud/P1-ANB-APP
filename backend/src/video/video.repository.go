@@ -74,3 +74,37 @@ func (r *videoRepository) Update(video *Video) error {
 	result := r.db.Save(video)
 	return result.Error
 }
+
+
+func (r *videoRepository) GetRankings() ([]RankingResponse, error) {
+    var results []struct {
+        VideoID    uint
+        Title      string
+        AuthorName string
+        VoteCount  int
+    }
+
+    queryResult := r.db.Table("videos").
+        Select("videos.id as video_id, videos.title, users.first_name || ' ' || users.last_name as author_name, videos.vote_count").
+        Joins("JOIN users ON users.id = videos.user_id").
+        Where("videos.status = ?", "processed").
+        Order("videos.vote_count DESC").
+        Scan(&results)
+
+    if queryResult.Error != nil {
+        return nil, queryResult.Error
+    }
+
+    rankings := make([]RankingResponse, len(results))
+    for i, result := range results {
+        rankings[i] = RankingResponse{
+            Position:   i + 1,
+            VideoID:    result.VideoID,
+            Title:      result.Title,
+            AuthorName: result.AuthorName,
+            VoteCount:  result.VoteCount,
+        }
+    }
+
+    return rankings, nil
+}

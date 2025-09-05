@@ -19,6 +19,7 @@ type VideoService interface {
 	Delete(videoID uint, userID uint) error
 	ListPublic() ([]VideoResponse, error)
 	MarkAsProcessed(videoID uint, userID uint) (*VideoResponse, error)
+	GetRankings() ([]RankingResponse, error)
 }
 
 type VideoController struct {
@@ -193,4 +194,14 @@ func (vc *VideoController) MarkVideoAsProcessed(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, video)
+}
+
+func (vc *VideoController) GetRankings(c *gin.Context) {
+	rankings, err := vc.videoService.GetRankings()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve rankings."})
+		return
+	}
+
+	c.JSON(http.StatusOK, rankings)
 }

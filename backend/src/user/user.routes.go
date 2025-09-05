@@ -9,8 +9,5 @@ func SignUpUserRoutes(router *gin.RouterGroup, userController *UserController) {
 
 		userRoutes.POST("/login", userController.Login)
 	}
-	publicRoutes := router.Group("/public")
-	{
-		publicRoutes.GET("/rankings", userController.GetRankings)
-	}
+
 }
