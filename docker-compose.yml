@@ -55,6 +55,27 @@ services:
       - postgres-anb
       - redis-anb
     restart: unless-stopped
+    
+ # --- SERVICIO DE TESTS ---
+  test:
+    container_name: test-anb
+    build:
+      context: ./backend 
+      dockerfile: Dockerfile.test
+    env_file:
+      - .env
+    depends_on:
+      - postgres-anb
+      - redis-anb
+    profiles:
+      - test
+    volumes:
+      - ./backend:/app
+    command: sh -c "go test ./... -v -cover"
+
+
+
+  
 
   # --- SERVICIO DE FRONTEND (COMENTADO) ---
   # Descomenta este bloque cuando quieras añadir tu frontend

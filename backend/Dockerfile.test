@@ -1,0 +1,17 @@
+# Dockerfile.test - Para ejecutar tests
+FROM golang:1.24-alpine AS test
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apk add --no-cache git gcc musl-dev sqlite-dev
+
+# Copiar go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copiar código fuente
+COPY . .
+
+# Ejecutar tests
+CMD ["sh", "-c", "go test ./... -v -cover"]
