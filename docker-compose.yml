@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5433:5433"
+      - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -56,18 +56,17 @@ services:
       - redis-anb
     restart: unless-stopped
 
-  # --- SERVICIO DE FRONTEND (COMENTADO) ---
-  # Descomenta este bloque cuando quieras añadir tu frontend
-  # frontend:
-  #   container_name: frontend-anb
-  #   build:
-  #     # Asume que tienes un Dockerfile dentro de tu carpeta 'frontend'
-  #     context: ./frontend 
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "3000:3000" # Por ejemplo, para una app de React/Vue
-  #   depends_on:
-  #     - api
+  # Frontend service
+  frontend:
+    container_name: frontend-anb
+    build:
+      context: ./frontend 
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
 
 volumes:
   postgres-data:
