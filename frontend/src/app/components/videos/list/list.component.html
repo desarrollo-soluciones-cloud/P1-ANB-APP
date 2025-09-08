@@ -1,0 +1,108 @@
+<div class="videos-container">
+  <div class="header-section">
+    <div class="title-container">
+      <mat-icon class="header-icon">video_library</mat-icon>
+      <h2 class="page-title">Mis Videos</h2>
+    </div>
+
+  </div>
+
+  <div class="loading-container" *ngIf="loading">
+    <mat-progress-spinner diameter="40" mode="indeterminate" color="primary"></mat-progress-spinner>
+    <p class="loading-text">Cargando tus videos...</p>
+  </div>
+
+  <div class="error-container" *ngIf="error && !loading">
+    <mat-card class="error-card">
+      <mat-card-content>
+        <div class="error-content">
+          <mat-icon class="error-icon">error_outline</mat-icon>
+          <div>
+            <h3>Error al cargar videos</h3>
+            <p>{{ error }}</p>
+            <button mat-stroked-button color="primary" (click)="loadVideos()">
+              <mat-icon>refresh</mat-icon>
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="videos-grid" *ngIf="!loading && !error && videos.length > 0">
+    <mat-card class="video-card" *ngFor="let video of videos">
+      <div class="card-header">
+        <div class="video-info">
+          <h3 class="video-title">{{ video.title }}</h3>
+          <div class="status-badge" [ngClass]="getStatusClass(video.status)">
+            <mat-icon class="status-icon">{{ getStatusIcon(video.status) }}</mat-icon>
+            <span>{{ getStatusText(video.status) }}</span>
+          </div>
+        </div>
+        <div class="votes-display">
+          <mat-icon class="votes-icon">how_to_vote</mat-icon>
+          <span class="votes-count">{{ video.votes || 0 }}</span>
+        </div>
+      </div>
+
+      <mat-card-content class="card-content">
+        <div class="metadata">
+          <div class="meta-item">
+            <mat-icon class="meta-icon">upload</mat-icon>
+            <span class="meta-text">{{ video.uploaded_at | date:'short' }}</span>
+          </div>
+          <div class="meta-item" *ngIf="video.processed_at">
+            <mat-icon class="meta-icon">done_all</mat-icon>
+            <span class="meta-text">{{ video.processed_at | date:'short' }}</span>
+          </div>
+        </div>
+
+        <div class="download-links" *ngIf="processedUrl(video) || originalUrl(video)">
+          <a *ngIf="processedUrl(video)" [href]="processedUrl(video)" target="_blank" [attr.download]="''">
+            <button mat-stroked-button color="accent" class="download-btn">
+              <mat-icon>high_quality</mat-icon>
+              Procesado
+            </button>
+          </a>
+          <a *ngIf="originalUrl(video)" [href]="originalUrl(video)" target="_blank" [attr.download]="''">
+            <button mat-stroked-button color="primary" class="download-btn">
+              <mat-icon>video_file</mat-icon>
+              Original
+            </button>
+          </a>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions class="card-actions">
+        <button 
+          mat-button 
+          color="warn" 
+          (click)="onDelete(video)" 
+          [disabled]="!isDeletable(video)"
+          class="action-btn delete-btn"
+          [matTooltip]="isDeletable(video) ? 'Eliminar video' : 'No se puede eliminar (video procesado)'"
+        >
+          <mat-icon>delete</mat-icon>
+          Eliminar
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && !error && videos.length === 0">
+    <mat-card class="empty-card">
+      <mat-card-content>
+        <div class="empty-content">
+          <mat-icon class="empty-icon">video_library</mat-icon>
+          <h3>No tienes videos subidos</h3>
+          <p>¡Comienza subiendo tu primer video!</p>
+          <button mat-flat-button color="primary" routerLink="/dashboard/upload" class="upload-btn-empty">
+            <mat-icon>add</mat-icon>
+            Subir Primer Video
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

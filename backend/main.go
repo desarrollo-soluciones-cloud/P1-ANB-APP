@@ -70,6 +70,10 @@ func main() {
 
 	router := gin.Default()
 
+	// Serve uploaded files publicly under /uploads
+	// e.g. GET /uploads/originals/xxx.mp4 will serve file ./uploads/originals/xxx.mp4
+	router.Static("/uploads", "./uploads")
+
 	router.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
@@ -89,6 +93,12 @@ func main() {
 		video.SignUpVideoRoutes(apiV1, videoController, authMiddleware)
 		vote.SignUpVoteRoutes(apiV1, voteController, authMiddleware)
 	}
+
+	// Backwards-compatible public endpoint without version: /api/public/videos
+	// This directly exposes the same handler as /api/v1/public/videos
+	router.GET("/api/public/videos", func(c *gin.Context) {
+		videoController.ListPublicVideos(c)
+	})
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{

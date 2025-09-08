@@ -1,0 +1,426 @@
+.public-videos-container {
+  max-width: 1200px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding: 20px 0;
+  border-bottom: 2px solid #e0e0e0;
+  
+  .title-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    
+    .header-icon {
+      font-size: 36px;
+      color: #4caf50;
+    }
+    
+    .page-title {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .page-subtitle {
+      margin: 4px 0 0 0;
+      color: #666;
+      font-size: 14px;
+    }
+  }
+  
+  .rankings-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    
+    mat-icon {
+      font-size: 20px;
+    }
+  }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  
+  .loading-text {
+    margin-top: 16px;
+    color: #666;
+    font-size: 16px;
+  }
+}
+
+.error-container {
+  margin-bottom: 24px;
+  
+  .error-card {
+    border-left: 4px solid #f44336;
+    border-radius: 8px;
+    
+    .error-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      
+      .error-icon {
+        color: #f44336;
+        font-size: 32px;
+        margin-top: 4px;
+      }
+      
+      h3 {
+        margin: 0 0 8px 0;
+        color: #f44336;
+        font-size: 18px;
+      }
+      
+      p {
+        margin: 0 0 16px 0;
+        color: #666;
+      }
+      
+      button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+    }
+  }
+}
+
+.videos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.video-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+  
+  &:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    transform: translateY(-4px);
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    position: relative;
+    
+    .video-ranking {
+      .rank-number {
+        background: rgba(255,255,255,0.2);
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 700;
+        border: 2px solid rgba(255,255,255,0.3);
+      }
+    }
+    
+    .video-info {
+      flex: 1;
+      
+      .video-title {
+        margin: 0 0 12px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+        line-height: 1.3;
+      }
+      
+      .author-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        
+        .author-icon {
+          font-size: 16px;
+          color: rgba(255,255,255,0.8);
+          flex-shrink: 0;
+        }
+        
+        .author-details {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          
+          .author-name {
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+            font-weight: 500;
+            line-height: 1.2;
+          }
+          
+          .author-location {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            
+            .location-icon {
+              font-size: 12px;
+              width: 12px;
+              height: 12px;
+            }
+            
+            .location-text {
+              line-height: 1.2;
+            }
+          }
+        }
+      }
+    }
+    
+    .votes-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      
+      .votes-icon {
+        font-size: 28px;
+        color: rgba(255,255,255,0.8);
+        transition: all 0.3s ease;
+        
+        &.voted {
+          color: #ff4757;
+          transform: scale(1.1);
+        }
+      }
+      
+      .votes-count {
+        font-size: 16px;
+        font-weight: 700;
+        color: white;
+      }
+    }
+  }
+  
+  .card-content {
+    padding: 24px 20px;
+  }
+  
+  .video-actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    
+    .watch-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 14px;
+      
+      mat-icon {
+        font-size: 20px;
+      }
+    }
+    
+    .vote-section {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      
+      .vote-btn, .unvote-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        
+        &:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        
+        mat-icon {
+          font-size: 18px;
+        }
+      }
+      
+      .vote-btn {
+        background: linear-gradient(45deg, #4caf50, #45a049);
+        color: white;
+        border: none;
+      }
+    }
+  }
+  
+  .vote-status {
+    background: linear-gradient(45deg, #4caf50, #45a049);
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    
+    .voted-icon {
+      font-size: 18px;
+    }
+  }
+}
+
+.empty-state, .auth-notice {
+  margin-top: 32px;
+  
+  .empty-card, .notice-card {
+    border-radius: 12px;
+    
+    .empty-content, .notice-content {
+      text-align: center;
+      padding: 48px 32px;
+      
+      &.notice-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        text-align: left;
+        padding: 24px 32px;
+      }
+      
+      .empty-icon {
+        font-size: 72px;
+        color: #ccc;
+        margin-bottom: 24px;
+      }
+      
+      .notice-icon {
+        font-size: 32px;
+        color: #2196f3;
+      }
+      
+      h3, h4 {
+        margin: 0 0 12px 0;
+        font-size: 20px;
+        color: #666;
+      }
+      
+      p {
+        margin: 0 0 24px 0;
+        color: #999;
+        font-size: 16px;
+      }
+      
+      .upload-btn, .login-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        
+        mat-icon {
+          font-size: 20px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .public-videos-container {
+    margin: 16px auto;
+    padding: 0 12px;
+  }
+  
+  .header-section {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    
+    .rankings-btn {
+      justify-content: center;
+    }
+  }
+  
+  .videos-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .video-card {
+    .card-header {
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+      
+      .video-ranking {
+        align-self: center;
+      }
+      
+      .votes-display {
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+    
+    .video-actions {
+      flex-direction: column;
+      gap: 12px;
+      
+      .watch-btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .vote-section {
+        justify-content: center;
+        
+        .vote-btn, .unvote-btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+  }
+  
+  .auth-notice {
+    .notice-content {
+      flex-direction: column;
+      text-align: center;
+      gap: 16px;
+      
+      .login-btn {
+        justify-content: center;
+      }
+    }
+  }
+}

@@ -12,6 +12,9 @@ func SignUpVideoRoutes(router *gin.RouterGroup, vc *VideoController, authMiddlew
 
 		protectedRoutes.GET("/:video_id", vc.GetVideoByID)
 
+		// Download endpoint that streams the video file as an attachment
+		protectedRoutes.GET("/:video_id/download", vc.Download)
+
 		protectedRoutes.DELETE("/:video_id", vc.DeleteVideo)
 
 		protectedRoutes.POST("/:video_id/mark-processed", vc.MarkVideoAsProcessed)
