@@ -1,6 +1,7 @@
 package video
 
 import (
+	"anb-app/src/storage"
 	"context"
 	"encoding/json"
 	"errors"
@@ -41,18 +42,20 @@ type videoService struct {
 	videoRepo   VideoRepository
 	asynqClient *asynq.Client
 	redisClient *redis.Client
+	storageSvc  storage.StorageService
 }
 
-func NewVideoService(videoRepo VideoRepository, asynqClient *asynq.Client, redisClient *redis.Client) VideoService {
+func NewVideoService(videoRepo VideoRepository, asynqClient *asynq.Client, redisClient *redis.Client, storageSvc storage.StorageService) VideoService {
 	return &videoService{
 		videoRepo:   videoRepo,
 		asynqClient: asynqClient,
 		redisClient: redisClient,
+		storageSvc:  storageSvc,
 	}
 }
 
-func (s *videoService) Upload(ctx *gin.Context, req *UploadVideoRequest, file *multipart.FileHeader, userID uint) (*VideoResponse, error) {
-	ext := filepath.Ext(file.Filename)
+func (s *videoService) Upload(ctx *gin.Context, req *UploadVideoRequest, fileHeader *multipart.FileHeader, userID uint) (*VideoResponse, error) {
+	ext := filepath.Ext(fileHeader.Filename)
 	newFileName := fmt.Sprintf("%d-%d%s", time.Now().UnixNano(), userID, ext)
 
 	uploadPath := "./uploads/originals"
@@ -61,11 +64,18 @@ func (s *videoService) Upload(ctx *gin.Context, req *UploadVideoRequest, file *m
 	}
 	filePath := filepath.Join(uploadPath, newFileName)
 
-	if err := ctx.SaveUploadedFile(file, filePath); err != nil {
+	file, err := fileHeader.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close() // Muy importante cerrar el archivo al final.
+
+	// 2. Delegamos la tarea de guardado al StorageService.
+	// ¡Ya no usamos ctx.SaveUploadedFile aquí!
+	if err := s.storageSvc.Upload(file, filePath); err != nil {
 		return nil, err
 	}
 
-	// Store a public URL path (served at /uploads) instead of the filesystem path
 	publicOriginalPath := fmt.Sprintf("/uploads/originals/%s", newFileName)
 	newVideo := &Video{
 		UserID:      userID,
@@ -86,7 +96,12 @@ func (s *videoService) Upload(ctx *gin.Context, req *UploadVideoRequest, file *m
 		return nil, err
 	}
 
-	task := asynq.NewTask(TypeVideoProcess, payload)
+	task := asynq.NewTask(
+		TypeVideoProcess,
+		payload,
+		asynq.MaxRetry(5),
+		asynq.Timeout(10*time.Minute),
+	)
 
 	taskInfo, err := s.asynqClient.Enqueue(task)
 	if err != nil {

@@ -28,31 +28,11 @@ func NewTaskProcessor(db *gorm.DB, videoRepo video.VideoRepository) *TaskProcess
 	return &TaskProcessor{db: db, videoRepo: videoRepo}
 }
 
-func (p *TaskProcessor) HandleProcessVideoTask(ctx context.Context, t *asynq.Task) error {
-	var payload video.VideoProcessPayload
-	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
-		return fmt.Errorf("failed to unmarshal payload: %w", err)
-	}
-
-	log.Printf("--- WORKER: Received task to process video ID: %d ---", payload.VideoID)
-
-	videoRecord, err := p.videoRepo.FindByID(payload.VideoID)
-	if err != nil || videoRecord == nil {
-		return fmt.Errorf("video %d not found or error fetching: %w", payload.VideoID, err)
-	}
-
+func (p *TaskProcessor) processVideo(videoRecord *video.Video) error {
 	log.Printf("Processing video '%s'...", videoRecord.Title)
 
-	// --- LÓGICA DE RUTAS CORREGIDA ---
-
-	// 1. Convertir rutas a absolutas usando /app/ como base (montado en Docker)
 	introVideoPath := "/app/intro/anb.mp4"
-	// Asegurar que la ruta original use /app/ como prefijo
-	originalPath := videoRecord.OriginalURL
-	if !strings.HasPrefix(originalPath, "/app/") {
-		originalPath = "/app/" + strings.TrimPrefix(originalPath, "uploads/")
-	}
-	originalVideoPath := originalPath
+	originalVideoPath := "/app/" + videoRecord.OriginalURL
 	baseName := strings.TrimSuffix(filepath.Base(originalVideoPath), filepath.Ext(originalVideoPath))
 
 	tempDir := "/app/uploads/temp"
@@ -64,44 +44,71 @@ func (p *TaskProcessor) HandleProcessVideoTask(ctx context.Context, t *asynq.Tas
 	concatListPath := filepath.Join(tempDir, baseName+"_list.txt")
 	finalOutputPath := filepath.Join(processedDir, baseName+".mp4")
 
-	// 2. Paso 1: Recortar y escalar el video del usuario
 	log.Println("Step 1: Trimming and scaling user video...")
 	cmd1 := exec.Command("ffmpeg", "-y", "-i", originalVideoPath, "-t", "30", "-vf", "scale=1280:720,setdar=16/9", "-preset", "fast", tempProcessedPath)
 	if err := runFFmpegCommand(cmd1); err != nil {
 		return fmt.Errorf("ffmpeg trim/scale failed: %w", err)
 	}
 
-	// 3. Paso 2: Crear el archivo de lista para concatenar
 	log.Println("Step 2: Creating concatenation list...")
-	safeIntroPath := strings.Replace(introVideoPath, `\`, `\\`, -1)
-	safeTempPath := strings.Replace(tempProcessedPath, `\`, `\\`, -1)
-	concatContent := fmt.Sprintf("file '%s'\nfile '%s'\nfile '%s'", safeIntroPath, safeTempPath, safeIntroPath)
+	concatContent := fmt.Sprintf("file '%s'\nfile '%s'\nfile '%s'", introVideoPath, tempProcessedPath, introVideoPath)
 	if err := os.WriteFile(concatListPath, []byte(concatContent), 0644); err != nil {
 		return fmt.Errorf("failed to create concat list: %w", err)
 	}
 
-	// 4. Paso 3: Concatenar los videos
 	log.Println("Step 3: Concatenating videos...")
 	cmd2 := exec.Command("ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", concatListPath, "-c", "copy", finalOutputPath)
 	if err := runFFmpegCommand(cmd2); err != nil {
 		return fmt.Errorf("ffmpeg concat failed: %w", err)
 	}
 
-	// 5. Limpieza de archivos temporales
 	log.Println("Step 4: Cleaning up temporary files...")
 	os.Remove(tempProcessedPath)
 	os.Remove(concatListPath)
 
-	// 6. Actualizar el registro en la base de datos
 	videoRecord.Status = "processed"
 	now := time.Now()
 	videoRecord.ProcessedAt = &now
-	videoRecord.ProcessedURL = fmt.Sprintf("uploads/processed/%s.mp4", baseName) // Guardar ruta relativa para el API
+	videoRecord.ProcessedURL = fmt.Sprintf("uploads/processed/%s.mp4", baseName)
 	if err := p.videoRepo.Update(videoRecord); err != nil {
-		return fmt.Errorf("failed to update video record %d: %w", payload.VideoID, err)
+		return fmt.Errorf("failed to update video record %d: %w", videoRecord.ID, err)
 	}
 
-	log.Printf("--- WORKER: Finished processing video ID: %d ---", payload.VideoID)
+	return nil
+}
+
+func (p *TaskProcessor) HandleProcessVideoTask(ctx context.Context, t *asynq.Task) error {
+	var payload video.VideoProcessPayload
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+
+	retryCount, _ := asynq.GetRetryCount(ctx)
+	maxRetry, _ := asynq.GetMaxRetry(ctx)
+	log.Printf("--- WORKER: Received task for video ID: %d (Retry: %d/%d) ---", payload.VideoID, retryCount, maxRetry)
+
+	videoRecord, err := p.videoRepo.FindByID(payload.VideoID)
+	if err != nil || videoRecord == nil {
+		log.Printf("ERROR: Video %d not found, skipping retry.", payload.VideoID)
+		return asynq.SkipRetry
+	}
+
+	processingErr := p.processVideo(videoRecord)
+
+	if processingErr != nil {
+		log.Printf("ERROR processing video ID %d: %v", payload.VideoID, processingErr)
+
+		if retryCount >= maxRetry-1 {
+			log.Printf("Task for video ID %d has failed permanently. Updating status to 'failed'.", payload.VideoID)
+
+			videoRecord.Status = "failed"
+			if updateErr := p.videoRepo.Update(videoRecord); updateErr != nil {
+				return fmt.Errorf("task failed permanently and could not update status: %w (original error: %v)", updateErr, processingErr)
+			}
+		}
+		return processingErr
+	}
+
 	return nil
 }
 

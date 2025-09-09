@@ -1,0 +1,328 @@
+{
+  "info": {
+    "name": "ANB API - Backend (Postman Collection)",
+    "_postman_id": "anb-api-1757207828",
+    "description": "Colección para documentar y probar el backend ANB (Gin + JWT). Prefijo de rutas: /api/v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:9090"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "video_id",
+      "value": "1"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Carlos\",\n  \"last_name\": \"Toro\",\n  \"email\": \"ctoro@example.com\",\n  \"password\": \"Password123!\",\n  \"password2\": \"Password123!\",\n  \"city\": \"Bogotá\",\n  \"country\": \"Colombia\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/signup",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "signup"
+              ]
+            },
+            "description": "Crea un usuario nuevo."
+          }
+        },
+        {
+          "name": "POST /api/v1/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mauricio@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Autentica y devuelve JWT."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let data={};",
+                  "try{data=pm.response.json();}catch(e){}",
+                  "if(data&&data.access_token){pm.collectionVariables.set('token',data.access_token);pm.test('JWT guardado',function(){pm.expect(pm.collectionVariables.get('token')).to.be.a('string');});}",
+                  "else{pm.test('No se recibió access_token',function(){pm.expect(false).to.be.true;});}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Videos (protegido)",
+      "item": [
+        {
+          "name": "POST /api/v1/videos/upload (form-data)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Mi video de prueba",
+                  "type": "text"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/videos/upload",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "videos",
+                "upload"
+              ]
+            },
+            "description": "Sube un video. Requiere Bearer {{token}}."
+          }
+        },
+        {
+          "name": "GET /api/v1/videos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/videos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "videos"
+              ]
+            },
+            "description": "Lista mis videos."
+          }
+        },
+        {
+          "name": "GET /api/v1/videos/:video_id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/videos/{{video_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "videos",
+                "{{video_id}}"
+              ]
+            },
+            "description": "Detalle de un video."
+          }
+        },
+        {
+          "name": "DELETE /api/v1/videos/:video_id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/videos/{{video_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "videos",
+                "{{video_id}}"
+              ]
+            },
+            "description": "Eliminar un video propio."
+          }
+        },
+        {
+          "name": "POST /api/v1/videos/:video_id/mark-processed",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/videos/{{video_id}}/mark-processed",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "videos",
+                "{{video_id}}",
+                "mark-processed"
+              ]
+            },
+            "description": "Marcar video como procesado."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Público (no requiere token)",
+      "auth": {
+        "type": "noauth"
+      },
+      "item": [
+        {
+          "name": "GET /api/v1/public/videos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/public/videos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "public",
+                "videos"
+              ]
+            },
+            "description": "Lista videos públicos."
+          }
+        },
+        {
+          "name": "GET /api/v1/public/rankings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/public/rankings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "public",
+                "rankings"
+              ]
+            },
+            "description": "Ranking por votos."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Votes (protegido)",
+      "item": [
+        {
+          "name": "POST /api/v1/public/videos/:video_id/vote",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/public/videos/{{video_id}}/vote",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "public",
+                "videos",
+                "{{video_id}}",
+                "vote"
+              ]
+            },
+            "description": "Crear voto (requiere token)."
+          }
+        },
+        {
+          "name": "DELETE /api/v1/public/videos/:video_id/vote",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/public/videos/{{video_id}}/vote",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "public",
+                "videos",
+                "{{video_id}}",
+                "vote"
+              ]
+            },
+            "description": "Eliminar mi voto."
+          }
+        }
+      ]
+    }
+  ]
+}

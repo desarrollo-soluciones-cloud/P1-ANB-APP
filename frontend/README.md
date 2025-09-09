@@ -1,144 +1,327 @@
-# ANB App (Frontend)
+# ANB Frontend
 
-Este es el frontend para la Asociación Nacional de Baloncesto (ANB). La aplicación está construida con **Angular 18**, **Angular Material** y se conecta al backend a través de una API REST. Todo el entorno está containerizado con **Docker**.
+## Descripción
 
-## Tecnologías Utilizadas
-* **Framework:** Angular 18
-* **UI Library:** Angular Material
-# ANB App (Frontend)
+Frontend para la plataforma ANB (Asociación Nacional de Baloncesto) - una aplicación web moderna para gestión y votación de videos. Desarrollada con Angular 18, Angular Material y completamente containerizada con Docker.
 
-Frontend de la Asociación Nacional de Baloncesto (ANB). Esta versión está enfocada en la gestión y consumo de contenidos de video: subida, listado personal, detalle, listado público, votación y tabla de clasificación.
+La aplicación permite a los usuarios registrarse, autenticarse, subir videos, gestionar su contenido personal, votar por videos públicos y visualizar rankings en tiempo real.
 
-La aplicación está construida con Angular (v18) y Angular Material. Se comunica con el backend REST que corre en el puerto 9090 en desarrollo.
+## Arquitectura
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Angular App   │    │   Nginx Proxy   │    │   Backend API   │
+│   (Development) │───▶│   (Production)  │───▶│   Go + Gin      │
+│   Port 4200     │    │   Port 3001     │    │   Port 9090     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Componentes Principales
+
+- **Angular 18**: Framework principal con standalone components
+- **Angular Material**: Biblioteca de componentes UI
+- **Nginx**: Servidor web para producción con proxy reverso
+- **TypeScript**: Tipado estático y desarrollo moderno
+- **SCSS**: Preprocesador CSS para estilos avanzados
 
 ## Tecnologías
-- Angular 18
-- Angular Material
-- TypeScript
-- SCSS
-- Angular HttpClient
-- Docker & Docker Compose (para orquestar frontend + backend)
 
----
-## Prerrequisitos
-Instalaciones recomendadas para desarrollo:
-- Docker y Docker Compose (recomendado para levantar todo el stack)
-- Node.js 18+ y npm (para desarrollo local)
-- Angular CLI (opcional): `npm i -g @angular/cli`
+- **Angular 18**: Framework web progresivo
+- **Angular Material**: Componentes UI siguiendo Material Design
+- **TypeScript**: Lenguaje de programación tipado
+- **SCSS**: Preprocesador CSS
+- **RxJS**: Programación reactiva
+- **Angular HttpClient**: Cliente HTTP para API REST
+- **Docker**: Containerización
+- **Nginx**: Servidor web de producción
 
----
-## Levantar todo con Docker (recomendado)
-Desde la raíz del repositorio (donde está `docker-compose.yml`):
-
-```bash
-docker-compose up --build
-```
-
-Después de iniciarse:
-
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:9090
-
-Para detener:
-
-```bash
-docker-compose down
-```
-
----
-## Desarrollo local (sin Docker)
-
-1) Instalar dependencias
-
-```bash
-cd frontend
-npm install
-```
-
-2) Levantar servidor de desarrollo
-
-```bash
-ng serve --open
-```
-
-Por defecto la app queda en `http://localhost:4200/`.
-
-3) Build de producción
-
-```bash
-ng build
-```
-
----
-## Estructura principal (resumen)
+## Estructura del Proyecto
 
 ```
 frontend/
 ├── src/
-│   └── app/
-│       ├── components/
-│       │   ├── auth/            # login / register
-│       │   ├── dashboard/       # shell / sidebar
-│       │   └── videos/          # upload, list, detail, public, ranking
-│       ├── services/            # api services (video.service, auth.service, api.service)
-│       └── guards/              # auth guard
+│   ├── app/
+│   │   ├── components/
+│   │   │   ├── auth/
+│   │   │   │   ├── login/          # Inicio de sesión
+│   │   │   │   └── register/       # Registro de usuarios
+│   │   │   ├── dashboard/          # Layout principal
+│   │   │   └── videos/
+│   │   │       ├── detail/         # Detalle de video
+│   │   │       ├── list/           # Lista personal de videos
+│   │   │       ├── public/         # Videos públicos
+│   │   │       ├── ranking/        # Tabla de clasificación
+│   │   │       └── upload/         # Subida de videos
+│   │   ├── guards/
+│   │   │   └── auth.guard.ts       # Protección de rutas
+│   │   ├── models/
+│   │   │   ├── user.model.ts       # Modelo de usuario
+│   │   │   └── video.model.ts      # Modelo de video
+│   │   ├── services/
+│   │   │   ├── auth.service.ts     # Servicio de autenticación
+│   │   │   ├── video.service.ts    # Servicio de videos
+│   │   │   └── api.service.ts      # Servicio base de API
+│   │   ├── app.component.*         # Componente raíz
+│   │   ├── app.config.ts           # Configuración de la app
+│   │   └── app.routes.ts           # Configuración de rutas
+│   ├── environments/
+│   │   ├── environment.ts          # Configuración desarrollo
+│   │   └── environment.prod.ts     # Configuración producción
+│   ├── styles.scss                 # Estilos globales
+│   └── index.html                  # Página principal
+├── public/
+│   ├── favicon.ico                 # Icono de la aplicación
+│   └── anb.jpg                     # Logo ANB
+├── angular.json                    # Configuración de Angular
+├── package.json                    # Dependencias npm
+├── tsconfig.json                   # Configuración TypeScript
+├── Dockerfile                      # Imagen Docker
+├── default.conf                    # Configuración Nginx
+└── README.md                       # Este archivo
 ```
 
----
-## Funcionalidades principales
+## Funcionalidades
 
-- Autenticación (registro / login)
-- Subida de videos (multipart/form-data)
-- Listado de mis videos
-- Detalle de video (muestra processed_url, votos, metadata)
-- Eliminación de video (el backend aplica reglas de negocio)
-- Listado público de videos para votar
-- Votar / quitar voto en un video (un voto por usuario)
-- Tabla de clasificación (rankings)
+### Autenticación
+- **Registro de usuarios**: Formulario completo con validaciones
+- **Inicio de sesión**: Autenticación JWT
+- **Gestión de sesiones**: Almacenamiento seguro de tokens
+- **Protección de rutas**: Guard para rutas autenticadas
 
----
-## Contrato API (resumen)
+### Gestión de Videos
+- **Subida de videos**: Upload con validación de formato y tamaño
+- **Lista personal**: Gestión de videos propios
+- **Detalle de video**: Visualización completa con metadatos
+- **Eliminación**: Borrado de videos propios
 
-NOTA: El backend no debe modificarse desde este repo; la app asume que la API corre en `http://localhost:9090`.
+### Sistema Público
+- **Videos públicos**: Catálogo de todos los videos
+- **Sistema de votación**: Un voto por usuario por video
+- **Rankings**: Clasificación por popularidad
+- **Búsqueda y filtros**: Navegación eficiente
 
-- Autenticación
-  - `POST /api/v1/auth/signup`  - Registro
-  - `POST /api/v1/auth/login`   - Login (devuelve JWT)
+### Interfaz de Usuario
+- **Material Design**: Diseño moderno y consistente
+- **Responsive**: Adaptado a dispositivos móviles y desktop
+- **Animaciones**: Transiciones suaves y feedback visual
+- **Temas**: Soporte para temas claros y oscuros
 
-- Videos (autenticado)
-  - `POST /api/v1/videos/upload`           - Subir video (multipart/form-data)
-      - Campos: `video` (file, .mp4), `title` (string)
-      - Restricción en frontend: archivo .mp4 y tamaño máximo recomendado 100MB
-  - `GET /api/v1/videos`                    - Listar mis videos
-  - `GET /api/v1/videos/:video_id`         - Detalle de un video (incluye `processed_url`, `votes`)
-  - `DELETE /api/v1/videos/:video_id`      - Eliminar video
+## Instalación y Configuración
 
-- Public (público / votación)
-  - `GET /api/v1/public/videos`            - Listado público de videos
-  - `POST /api/v1/public/videos/:id/vote`  - Votar por video (autenticado)
-  - `DELETE /api/v1/public/videos/:id/vote`- Quitar voto (autenticado)
-  - `GET /api/v1/public/rankings`          - Tabla de clasificación
+### Prerrequisitos
 
-### Notas sobre autenticación
-- La app utiliza JWT en `localStorage` (AuthService gestiona cabeceras Authorization).
-- Los endpoints protegidos requieren el header `Authorization: Bearer <token>`.
+- Node.js 18+ y npm
+- Angular CLI (opcional): `npm install -g @angular/cli`
+- Docker y Docker Compose (para producción)
 
----
-## Pruebas rápidas / flujo de trabajo
+### Desarrollo Local
 
-1. Levanta backend (por ejemplo con `docker-compose`) en `:9090`.
-2. Levanta frontend (`ng serve`) o usa Docker.
-3. Regístrate / loguea.
-4. Sube un video desde la sección "Upload" (campo `video` y `title`).
-5. Revisa "Mis videos" y abre el detalle para ver `processed_url` y votos.
-6. Revisa "Public videos" y prueba votar / quitar voto.
-7. Abre "Tabla de clasificación" para ver el ranking.
+```bash
+# 1. Clonar repositorio
+git clone <repository-url>
+cd frontend
 
----
-## Observaciones y próximos pasos
+# 2. Instalar dependencias
+npm install
 
-- El listado público actualmente no incluye, de forma consistente, un flag `voted_by_current_user` en todas las respuestas; si necesitas mostrar el estado de voto al cargar la lista, lo ideal es que el backend devuelva ese campo o un endpoint adicional que liste los IDs votados por el usuario autenticado.
-- Se han eliminado las antiguas funcionalidades de gestión de tareas/categorías para dejar la app enfocada en videos.
+# 3. Configurar entorno
+# Verificar src/environments/environment.ts
 
----
-Si necesitas que añada ejemplos de llamadas curl o scripts de pruebas automáticas para upload/voto/rankings, lo agrego.
+# 4. Iniciar servidor de desarrollo
+ng serve
+
+# 5. Abrir navegador
+# http://localhost:4200
+```
+
+### Comandos de Desarrollo
+
+```bash
+# Servidor de desarrollo
+ng serve --open
+
+# Build de desarrollo
+ng build
+
+# Build de producción
+ng build --configuration production
+
+# Linter
+ng lint
+
+# Análisis de bundle
+ng build --source-map
+npx webpack-bundle-analyzer dist/anb-frontend/stats.json
+```
+
+## Docker
+
+### Desarrollo con Docker
+
+```bash
+# Desde la raíz del proyecto
+docker-compose up frontend -d
+
+# Ver logs
+docker-compose logs frontend
+
+# Reconstruir imagen
+docker-compose build frontend
+```
+
+### Producción
+
+```bash
+# Levantar stack completo
+docker-compose up -d
+
+# URLs de acceso
+# Frontend: http://localhost:3001
+# Backend: http://localhost:9090
+```
+
+### Dockerfile Multi-etapa
+
+```dockerfile
+# Etapa de construcción
+FROM node:18-alpine AS build
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Etapa de producción
+FROM nginx:alpine
+COPY --from=build /app/dist/anb-frontend/browser /usr/share/nginx/html
+COPY default.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+## Configuración de Entornos
+
+### Development (environment.ts)
+
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:9090'
+};
+```
+
+### Production (environment.prod.ts)
+
+```typescript
+export const environment = {
+  production: true,
+  apiUrl: ''  // Usa nginx proxy
+};
+```
+
+## API Integration
+
+### Endpoints Principales
+
+```typescript
+// Autenticación
+POST /api/v1/auth/signup     // Registro
+POST /api/v1/auth/login      // Login
+
+// Usuarios  
+GET /api/v1/users/profile    // Perfil usuario
+GET /api/v1/users/:user_id   // Usuario por ID
+
+// Videos (Autenticados)
+POST /api/v1/videos/upload          // Subir video
+GET /api/v1/videos                  // Mis videos
+GET /api/v1/videos/:video_id        // Detalle video
+DELETE /api/v1/videos/:video_id     // Eliminar video
+
+// Videos Públicos
+GET /api/v1/public/videos           // Lista pública
+GET /api/v1/public/rankings         // Rankings
+
+// Votación
+POST /api/v1/public/videos/:id/vote // Votar
+```
+
+### Servicios Angular
+
+```typescript
+// AuthService - Gestión de autenticación
+login(credentials): Observable<any>
+register(userData): Observable<any>
+logout(): void
+isAuthenticated(): boolean
+
+// VideoService - Gestión de videos
+uploadVideo(formData): Observable<any>
+getMyVideos(): Observable<any>
+getPublicVideos(): Observable<any>
+voteVideo(videoId): Observable<any>
+```
+
+## Deployment
+
+### Build de Producción
+
+```bash
+# Build optimizado
+ng build --configuration production
+
+# Verificar salida
+ls -la dist/anb-frontend/browser/
+```
+
+### Nginx Configuration
+
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # SPA Configuration
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # API Proxy
+    location /api/ {
+        proxy_pass http://api:9090;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Static files caching
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+## Flujo de Trabajo
+
+### Usuario Típico
+
+1. **Registro/Login**: Crear cuenta o iniciar sesión
+2. **Dashboard**: Acceder al panel principal
+3. **Subir Video**: Upload de contenido con metadatos
+4. **Gestionar**: Ver y administrar videos personales
+5. **Explorar**: Navegar videos públicos
+6. **Votar**: Participar en el sistema de votación
+7. **Rankings**: Consultar clasificaciones
+
+### Desarrollador
+
+1. **Setup**: Configurar entorno de desarrollo
+2. **Development**: Implementar nuevas funcionalidades
+3. **Testing**: Ejecutar pruebas unitarias y E2E
+4. **Build**: Generar versión de producción
+5. **Deploy**: Desplegar con Docker Compose
+
+**ANB Frontend v1.0**  
+*Desarrollado con Angular*
