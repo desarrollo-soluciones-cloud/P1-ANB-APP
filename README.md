@@ -272,6 +272,10 @@ docker exec postgres-anb pg_dump -U anb_user anb_db > backup.sql
 tar -czf videos_backup.tar.gz backend/uploads/
 ```
 
+# SonarQube
+
+Se encuentra en la wiki del repo.
+
 ## Contribución
 
 1. Fork del repositorio
@@ -287,3 +291,4 @@ tar -czf videos_backup.tar.gz backend/uploads/
 
 **ANB - Asociación Nacional de Baloncesto v1.0**  
 *Sistema completo de gestión y votación de videos*
+
