@@ -1,3 +1,4 @@
+// En backend/src/database/database.go
 package database
 
 import (
@@ -14,7 +15,6 @@ import (
 )
 
 func ConnectDB() *gorm.DB {
-
 	err := godotenv.Load()
 	if err != nil {
 		log.Println("Advertencia: No se pudo encontrar el archivo .env, se usarán las variables de entorno del sistema.")
@@ -38,6 +38,12 @@ func ConnectDB() *gorm.DB {
 }
 
 func MigrateTables(db *gorm.DB) {
+	// Verificar si las tablas ya existen
+	if db.Migrator().HasTable(&user.User{}) {
+		log.Println("Las tablas ya existen, omitiendo migraciones automáticas.")
+		return
+	}
+
 	log.Println("Ejecutando migraciones...")
 	err := db.AutoMigrate(&user.User{}, &video.Video{}, &vote.Vote{})
 	if err != nil {
