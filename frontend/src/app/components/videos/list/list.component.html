@@ -64,7 +64,7 @@
                  controls 
                  class="video-player"
                  preload="none"
-                 crossorigin="anonymous">
+                 loading="lazy">
             <source [src]="getVideoUrl(video, 'processed')" type="video/mp4">
             Tu navegador no soporta el elemento video.
           </video>
@@ -73,7 +73,7 @@
                  controls 
                  class="video-player"
                  preload="none"
-                 crossorigin="anonymous">
+                 loading="lazy">
             <source [src]="getVideoUrl(video, 'original')" type="video/mp4">
             Tu navegador no soporta el elemento video.
           </video>

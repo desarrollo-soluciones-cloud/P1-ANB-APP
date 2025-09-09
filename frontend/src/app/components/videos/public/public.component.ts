@@ -114,17 +114,13 @@ export class PublicVideosComponent implements OnInit {
     const url = video.processed_url || video.processedUrl;
     if (!url) return null;
     
-    // Asegurar que use el puerto correcto del API (9090)
-    const apiBase = 'http://localhost:9090';
-    if (url.startsWith('http')) return url;
-    
-    // Para rutas que empiezan con /uploads, usar directamente el API
+    // Usar ruta relativa para evitar CORS (manejada por nginx proxy)
     if (url.startsWith('/uploads') || url.startsWith('uploads')) {
       const cleanPath = url.startsWith('/') ? url : '/' + url;
-      return `${apiBase}${cleanPath}`;
+      return cleanPath; // Ruta relativa que nginx proxy manejará
     }
     
-    return `${apiBase}/${url}`;
+    return this.normalizeUrl(url);
   }
 
   // Vote action triggered by the UI
