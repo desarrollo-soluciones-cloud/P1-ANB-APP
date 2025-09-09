@@ -65,11 +65,13 @@ func (s *videoService) Upload(ctx *gin.Context, req *UploadVideoRequest, file *m
 		return nil, err
 	}
 
+	// Store a public URL path (served at /uploads) instead of the filesystem path
+	publicOriginalPath := fmt.Sprintf("/uploads/originals/%s", newFileName)
 	newVideo := &Video{
 		UserID:      userID,
 		Title:       req.Title,
 		Status:      "uploaded",
-		OriginalURL: filePath,
+		OriginalURL: publicOriginalPath,
 		UploadedAt:  time.Now(),
 	}
 
@@ -183,7 +185,9 @@ func (s *videoService) Delete(videoID uint, userID uint) error {
 		return err
 	}
 
-	_ = os.Remove(video.OriginalURL)
+	// video.OriginalURL is a public path like /uploads/originals/xyz.mp4 -> convert to filesystem path
+	fsPath := strings.TrimPrefix(video.OriginalURL, "/")
+	_ = os.Remove(fsPath)
 
 	return nil
 }
@@ -230,7 +234,8 @@ func (s *videoService) MarkAsProcessed(videoID uint, userID uint) (*VideoRespons
 	now := time.Now()
 	video.ProcessedAt = &now
 	baseName := strings.TrimSuffix(filepath.Base(video.OriginalURL), filepath.Ext(video.OriginalURL))
-	video.ProcessedURL = fmt.Sprintf("./uploads/processed/%s.mp4", baseName)
+	// Store processed public path
+	video.ProcessedURL = fmt.Sprintf("/uploads/processed/%s.mp4", baseName)
 
 	if err := s.videoRepo.Update(video); err != nil {
 		return nil, err

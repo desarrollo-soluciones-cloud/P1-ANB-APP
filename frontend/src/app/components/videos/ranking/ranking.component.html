@@ -1,0 +1,183 @@
+<div class="ranking-container">
+  <div class="header-section">
+    <div class="title-container">
+      <mat-icon class="header-icon">leaderboard</mat-icon>
+      <div>
+        <h2 class="page-title">Tabla de Clasificación</h2>
+        <p class="page-subtitle">Los videos más votados por la comunidad</p>
+      </div>
+    </div>
+    <button mat-flat-button color="primary" routerLink="/dashboard/public/videos" class="public-btn">
+      <mat-icon>public</mat-icon>
+      Ver Videos Públicos
+    </button>
+  </div>
+
+  <div class="loading-container" *ngIf="loading">
+    <mat-progress-spinner diameter="40" mode="indeterminate" color="primary"></mat-progress-spinner>
+    <p class="loading-text">Cargando clasificación...</p>
+  </div>
+
+  <div class="error-container" *ngIf="error && !loading">
+    <mat-card class="error-card">
+      <mat-card-content>
+        <div class="error-content">
+          <mat-icon class="error-icon">error_outline</mat-icon>
+          <div>
+            <h3>Error al cargar rankings</h3>
+            <p>{{ error }}</p>
+            <button mat-stroked-button color="primary" (click)="loadRankings()">
+              <mat-icon>refresh</mat-icon>
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="table-container" *ngIf="!loading && !error && rankings && rankings.length > 0">
+    <mat-card class="ranking-card">
+      <div class="podium-section" *ngIf="rankings.length >= 3">
+        <div class="podium">
+          <!-- Second place -->
+          <div class="podium-item second" *ngIf="rankings[1]">
+            <div class="medal">
+              <mat-icon class="medal-icon silver">military_tech</mat-icon>
+              <span class="position">2°</span>
+            </div>
+            <div class="podium-info">
+              <h4 class="video-title">{{ rankings[1].title }}</h4>
+              <p class="author">{{ rankings[1].author_name }}</p>
+              <div class="votes">
+                <mat-icon>favorite</mat-icon>
+                <span>{{ rankings[1].votes }} votos</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- First place -->
+          <div class="podium-item first" *ngIf="rankings[0]">
+            <div class="medal">
+              <mat-icon class="medal-icon gold">military_tech</mat-icon>
+              <span class="position">1°</span>
+            </div>
+            <div class="podium-info">
+              <h4 class="video-title">{{ rankings[0].title }}</h4>
+              <p class="author">{{ rankings[0].author_name }}</p>
+              <div class="votes">
+                <mat-icon>favorite</mat-icon>
+                <span>{{ rankings[0].votes }} votos</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Third place -->
+          <div class="podium-item third" *ngIf="rankings[2]">
+            <div class="medal">
+              <mat-icon class="medal-icon bronze">military_tech</mat-icon>
+              <span class="position">3°</span>
+            </div>
+            <div class="podium-info">
+              <h4 class="video-title">{{ rankings[2].title }}</h4>
+              <p class="author">{{ rankings[2].author_name }}</p>
+              <div class="votes">
+                <mat-icon>favorite</mat-icon>
+                <span>{{ rankings[2].votes }} votos</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-section">
+        <h3 class="table-title" *ngIf="rankings.length > 3">
+          <mat-icon>format_list_numbered</mat-icon>
+          Clasificación Completa
+        </h3>
+
+        <table mat-table [dataSource]="rankings" class="ranking-table">
+          <!-- Position Column -->
+          <ng-container matColumnDef="position">
+            <th mat-header-cell *matHeaderCellDef class="position-header">
+              <mat-icon>numbers</mat-icon>
+              Posición
+            </th>
+            <td mat-cell *matCellDef="let ranking" class="position-cell">
+              <div class="position-wrapper" [ngClass]="getPositionClass(ranking.position)">
+                <span class="position-number">{{ ranking.position }}</span>
+                <mat-icon class="trophy-icon" *ngIf="ranking.position <= 3">
+                  {{ getTrophyIcon(ranking.position) }}
+                </mat-icon>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Title Column -->
+          <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef class="title-header">
+              <mat-icon>movie</mat-icon>
+              Video
+            </th>
+            <td mat-cell *matCellDef="let ranking" class="title-cell">
+              <div class="video-info">
+                <h4 class="video-title">{{ ranking.title }}</h4>
+                <div class="video-meta">
+                  <mat-icon class="meta-icon">videocam</mat-icon>
+                  <span>Video ID: {{ ranking.video_id || 'N/A' }}</span>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Author Column -->
+          <ng-container matColumnDef="author_name">
+            <th mat-header-cell *matHeaderCellDef class="author-header">
+              <mat-icon>person</mat-icon>
+              Autor
+            </th>
+            <td mat-cell *matCellDef="let ranking" class="author-cell">
+              <div class="author-info">
+                <mat-icon class="author-icon">account_circle</mat-icon>
+                <span class="author-name">{{ ranking.author_name || 'Anónimo' }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Votes Column -->
+          <ng-container matColumnDef="votes">
+            <th mat-header-cell *matHeaderCellDef class="votes-header">
+              <mat-icon>how_to_vote</mat-icon>
+              Votos
+            </th>
+            <td mat-cell *matCellDef="let ranking" class="votes-cell">
+              <div class="votes-display">
+                <mat-icon class="votes-icon">favorite</mat-icon>
+                <span class="votes-count">{{ ranking.votes || 0 }}</span>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns" class="header-row"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns;" class="data-row" [ngClass]="getRowClass(row.position)"></tr>
+        </table>
+      </div>
+    </mat-card>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && !error && (!rankings || rankings.length === 0)">
+    <mat-card class="empty-card">
+      <mat-card-content>
+        <div class="empty-content">
+          <mat-icon class="empty-icon">leaderboard</mat-icon>
+          <h3>No hay datos de ranking</h3>
+          <p>Aún no hay suficientes votos para generar una clasificación.</p>
+          <button mat-flat-button color="primary" routerLink="/dashboard/public/videos" class="vote-btn">
+            <mat-icon>how_to_vote</mat-icon>
+            Ir a Votar
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

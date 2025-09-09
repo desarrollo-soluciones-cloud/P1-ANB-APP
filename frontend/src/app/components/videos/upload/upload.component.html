@@ -1,0 +1,131 @@
+<div class="upload-container">
+  <div class="upload-header">
+    <h1>
+      <mat-icon>cloud_upload</mat-icon>
+      Subir Video
+    </h1>
+    <p>Comparte tu contenido con la comunidad ANB</p>
+  </div>
+
+  <mat-card class="upload-card">
+    <mat-card-content>
+      <!-- File Upload Section -->
+      <div class="upload-section">
+        <h3>
+          <mat-icon>video_file</mat-icon>
+          Archivo de Video
+        </h3>
+        
+        <!-- Drag and Drop Area -->
+        <div 
+          class="drop-zone"
+          [class.drag-over]="dragOver"
+          [class.has-file]="file"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+          (click)="fileInput.click()">
+          
+          <div *ngIf="!file" class="drop-zone-content">
+            <mat-icon class="upload-icon">cloud_upload</mat-icon>
+            <p class="drop-text">Arrastra tu archivo MP4 aquí</p>
+            <p class="drop-subtext">o haz clic para seleccionar</p>
+            <div class="file-requirements">
+              <span><mat-icon>check_circle</mat-icon> Formato: MP4</span>
+              <span><mat-icon>check_circle</mat-icon> Tamaño máximo: 100MB</span>
+            </div>
+          </div>
+
+          <div *ngIf="file" class="file-preview">
+            <div class="file-info">
+              <mat-icon class="file-icon">movie</mat-icon>
+              <div class="file-details">
+                <h4>{{ file.name }}</h4>
+                <p>{{ getFileSizeString() }}</p>
+              </div>
+              <button 
+                mat-icon-button 
+                color="warn" 
+                (click)="removeFile(); $event.stopPropagation()"
+                matTooltip="Remover archivo">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <input 
+          #fileInput
+          type="file" 
+          accept="video/mp4" 
+          (change)="onFileChange($event)"
+          style="display: none;">
+      </div>
+
+      <!-- Video Details Section -->
+      <div class="details-section">
+        <h3>
+          <mat-icon>edit</mat-icon>
+          Detalles del Video
+        </h3>
+        
+        <mat-form-field appearance="outline" class="title-field">
+          <mat-label>Título del video</mat-label>
+          <input 
+            matInput 
+            [(ngModel)]="title" 
+            placeholder="Ingresa un título descriptivo"
+            maxlength="100">
+          <mat-hint>{{ title.length }}/100 caracteres</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <!-- Upload Progress -->
+      <div *ngIf="uploading" class="upload-progress">
+        <h4>
+          <mat-icon>cloud_upload</mat-icon>
+          Subiendo video...
+        </h4>
+        <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+        <p>Por favor espera mientras procesamos tu video</p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button 
+          mat-flat-button 
+          color="primary" 
+          (click)="submit()" 
+          [disabled]="uploading || !file || !title.trim()"
+          class="upload-btn">
+          <mat-icon>cloud_upload</mat-icon>
+          {{ uploading ? 'Subiendo...' : 'Subir Video' }}
+        </button>
+        
+        <button 
+          mat-stroked-button 
+          color="warn" 
+          (click)="clearForm()"
+          [disabled]="uploading"
+          class="clear-btn">
+          <mat-icon>clear_all</mat-icon>
+          Limpiar Formulario
+        </button>
+      </div>
+
+      <!-- Upload Guidelines -->
+      <div class="upload-guidelines">
+        <h4>
+          <mat-icon>info</mat-icon>
+          Pautas de Contenido
+        </h4>
+        <ul>
+          <li>El contenido debe ser original o tener los derechos correspondientes</li>
+          <li>No se permite contenido ofensivo o inapropiado</li>
+          <li>Los videos serán revisados antes de ser publicados</li>
+          <li>Una vez subido, tu video estará disponible para votación pública</li>
+        </ul>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
