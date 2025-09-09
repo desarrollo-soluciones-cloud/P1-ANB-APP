@@ -86,7 +86,12 @@ func (s *videoService) Upload(ctx *gin.Context, req *UploadVideoRequest, file *m
 		return nil, err
 	}
 
-	task := asynq.NewTask(TypeVideoProcess, payload)
+	task := asynq.NewTask(
+		TypeVideoProcess,
+		payload,
+		asynq.MaxRetry(5),
+		asynq.Timeout(10*time.Minute),
+	)
 
 	taskInfo, err := s.asynqClient.Enqueue(task)
 	if err != nil {
