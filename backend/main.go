@@ -3,6 +3,7 @@ package main
 import (
 	"anb-app/src/auth"
 	"anb-app/src/database"
+	"anb-app/src/storage"
 	"anb-app/src/user"
 	"anb-app/src/video"
 	"anb-app/src/vote"
@@ -59,8 +60,9 @@ func main() {
 	userController := user.NewUserController(userSvc)
 
 	// Video
+	storageSvc := storage.NewLocalStorageService()
 	videoRepo := video.NewVideoRepository(db)
-	videoSvc := video.NewVideoService(videoRepo, asynqClient, redisClient)
+	videoSvc := video.NewVideoService(videoRepo, asynqClient, redisClient, storageSvc)
 	videoController := video.NewVideoController(videoSvc)
 
 	// Vote

@@ -1,6 +1,7 @@
 package video
 
 import (
+	"mime/multipart"
 	"testing"
 
 	"github.com/hibiken/asynq"
@@ -51,12 +52,23 @@ func (m *MockVideoRepository) GetRankings() ([]RankingResponse, error) {
 	return args.Get(0).([]RankingResponse), args.Error(1)
 }
 
+// Mock para StorageService
+type MockStorageService struct {
+	mock.Mock
+}
+
+func (m *MockStorageService) Upload(file multipart.File, destinationPath string) error {
+	args := m.Called(file, destinationPath)
+	return args.Error(0)
+}
+
 func TestVideoService(t *testing.T) {
 	t.Run("ListByUserID_Success", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
+		mockStorage := new(MockStorageService)
 		asynqClient := &asynq.Client{}
 		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient)
+		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
 
 		userID := uint(1)
 		videos := []Video{
@@ -75,9 +87,10 @@ func TestVideoService(t *testing.T) {
 
 	t.Run("GetByID_Success", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
+		mockStorage := new(MockStorageService)
 		asynqClient := &asynq.Client{}
 		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient)
+		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
 
 		videoID := uint(1)
 		userID := uint(1)
@@ -100,9 +113,10 @@ func TestVideoService(t *testing.T) {
 
 	t.Run("GetByID_NotFound", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
+		mockStorage := new(MockStorageService)
 		asynqClient := &asynq.Client{}
 		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient)
+		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
 
 		videoID := uint(999)
 		userID := uint(1)
@@ -119,9 +133,10 @@ func TestVideoService(t *testing.T) {
 
 	t.Run("GetByID_PermissionDenied", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
+		mockStorage := new(MockStorageService)
 		asynqClient := &asynq.Client{}
 		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient)
+		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
 
 		videoID := uint(1)
 		userID := uint(1)
@@ -145,16 +160,18 @@ func TestVideoService(t *testing.T) {
 
 	t.Run("Delete_Success", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
+		mockStorage := new(MockStorageService)
 		asynqClient := &asynq.Client{}
 		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient)
+		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
 
 		videoID := uint(1)
 		userID := uint(1)
 		video := &Video{
-			ID:     videoID,
-			UserID: userID,
-			Status: "uploaded",
+			ID:          videoID,
+			UserID:      userID,
+			Status:      "uploaded",
+			OriginalURL: "/uploads/originals/test.mp4",
 		}
 
 		mockRepo.On("FindByID", videoID).Return(video, nil)
@@ -168,9 +185,10 @@ func TestVideoService(t *testing.T) {
 
 	t.Run("ListPublic_Success", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
+		mockStorage := new(MockStorageService)
 		asynqClient := &asynq.Client{}
 		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient)
+		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
 
 		videos := []Video{
 			{ID: 1, Title: "Public Video 1", Status: "processed", VoteCount: 10},
@@ -183,6 +201,35 @@ func TestVideoService(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("MarkAsProcessed_Success", func(t *testing.T) {
+		mockRepo := new(MockVideoRepository)
+		mockStorage := new(MockStorageService)
+		asynqClient := &asynq.Client{}
+		redisClient := &redis.Client{}
+		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
+
+		videoID := uint(1)
+		userID := uint(1)
+		video := &Video{
+			ID:          videoID,
+			UserID:      userID,
+			Title:       "Test Video",
+			Status:      "uploaded",
+			OriginalURL: "/uploads/originals/test-video.mov",
+		}
+
+		mockRepo.On("FindByID", videoID).Return(video, nil)
+		mockRepo.On("Update", mock.AnythingOfType("*video.Video")).Return(nil)
+
+		result, err := videoSvc.MarkAsProcessed(videoID, userID)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "processed", result.Status)
+		assert.Equal(t, "/uploads/processed/test-video.mp4", result.ProcessedURL)
+		assert.NotNil(t, result.ProcessedAt)
 		mockRepo.AssertExpectations(t)
 	})
 }
