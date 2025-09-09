@@ -1,0 +1,148 @@
+<div class="public-videos-container">
+  <div class="header-section">
+    <div class="title-container">
+      <mat-icon class="header-icon">public</mat-icon>
+      <div>
+        <h2 class="page-title">Videos Públicos</h2>
+        <p class="page-subtitle">Descubre y vota por tus videos favoritos</p>
+      </div>
+    </div>
+    <button mat-flat-button color="accent" routerLink="/dashboard/rankings" class="rankings-btn">
+      <mat-icon>leaderboard</mat-icon>
+      Ver Rankings
+    </button>
+  </div>
+
+  <div class="loading-container" *ngIf="loading">
+    <mat-progress-spinner diameter="40" mode="indeterminate" color="primary"></mat-progress-spinner>
+    <p class="loading-text">Cargando videos públicos...</p>
+  </div>
+
+  <div class="error-container" *ngIf="error && !loading">
+    <mat-card class="error-card">
+      <mat-card-content>
+        <div class="error-content">
+          <mat-icon class="error-icon">error_outline</mat-icon>
+          <div>
+            <h3>{{ getErrorTitle() }}</h3>
+            <p>{{ error }}</p>
+            <button mat-stroked-button color="primary" (click)="loadPublic()">
+              <mat-icon>refresh</mat-icon>
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="videos-grid" *ngIf="!loading && !error && videos.length > 0">
+    <mat-card class="video-card" *ngFor="let video of videos; let i = index">
+      <div class="card-header">
+        <div class="video-ranking">
+          <span class="rank-number">#{{ i + 1 }}</span>
+        </div>
+        <div class="video-info">
+          <h3 class="video-title">{{ video.title }}</h3>
+          <div class="author-info">
+            <mat-icon class="author-icon">person</mat-icon>
+            <div class="author-details">
+              <span class="author-name">{{ getAuthorName(video) }}</span>
+              <span class="author-location" *ngIf="getAuthorCity(video) || getAuthorCountry(video)">
+                <mat-icon class="location-icon">location_on</mat-icon>
+                <span class="location-text">
+                  {{ getAuthorCity(video) }}
+                  <span *ngIf="getAuthorCity(video) && getAuthorCountry(video)">, </span>
+                  {{ getAuthorCountry(video) }}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="votes-display">
+          <mat-icon class="votes-icon" [class.voted]="video._voted">favorite</mat-icon>
+          <span class="votes-count">{{ getVoteCount(video) }}</span>
+        </div>
+      </div>
+
+      <mat-card-content class="card-content">
+        <div class="video-player-section" *ngIf="video.processed_url || video.processedUrl">
+          <video controls 
+                 class="video-player"
+                 preload="none"
+                 loading="lazy">
+            <source [src]="getVideoUrl(video)" type="video/mp4">
+            Tu navegador no soporta el elemento video.
+          </video>
+        </div>
+        
+        <div class="video-actions">
+          
+          <div class="vote-section">
+            <button 
+              *ngIf="!video._voted" 
+              mat-flat-button 
+              color="accent" 
+              (click)="vote(video)"
+              class="vote-btn"
+              [disabled]="!isAuthenticated()"
+            >
+              <mat-icon>thumb_up</mat-icon>
+              {{ isAuthenticated() ? 'Votar' : 'Inicia sesión para votar' }}
+            </button>
+            
+            <button 
+              *ngIf="video._voted" 
+              mat-stroked-button 
+              color="warn" 
+              (click)="unvote(video)"
+              class="unvote-btn"
+            >
+              <mat-icon>thumb_down</mat-icon>
+              Retirar Voto
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <div class="vote-status" *ngIf="video._voted">
+        <mat-icon class="voted-icon">check_circle</mat-icon>
+        <span>¡Ya votaste por este video!</span>
+      </div>
+    </mat-card>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && !error && videos.length === 0">
+    <mat-card class="empty-card">
+      <mat-card-content>
+        <div class="empty-content">
+          <mat-icon class="empty-icon">public_off</mat-icon>
+          <h3>No hay videos públicos</h3>
+          <p>Aún no hay videos disponibles para votar.</p>
+          <button mat-flat-button color="primary" routerLink="/dashboard/upload" class="upload-btn">
+            <mat-icon>add</mat-icon>
+            Subir el Primer Video
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="auth-notice" *ngIf="!isAuthenticated() && videos.length > 0">
+    <mat-card class="notice-card">
+      <mat-card-content>
+        <div class="notice-content">
+          <mat-icon class="notice-icon">info</mat-icon>
+          <div>
+            <h4>¿Quieres votar?</h4>
+            <p>Inicia sesión para poder votar por tus videos favoritos</p>
+          </div>
+          <button mat-flat-button color="primary" routerLink="/login" class="login-btn">
+            <mat-icon>login</mat-icon>
+            Iniciar Sesión
+          </button>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

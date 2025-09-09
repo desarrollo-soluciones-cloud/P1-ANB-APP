@@ -1,0 +1,117 @@
+<div class="video-detail-container" *ngIf="video">
+  <div class="breadcrumb">
+    <button mat-icon-button routerLink="/dashboard/videos" class="back-btn">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span class="breadcrumb-text">Mis Videos / Detalle</span>
+  </div>
+
+  <mat-card class="video-card">
+    <mat-card-header class="card-header">
+      <div mat-card-avatar class="video-avatar">
+        <mat-icon>play_circle_filled</mat-icon>
+      </div>
+      <mat-card-title class="video-title">{{ video.title }}</mat-card-title>
+      <mat-card-subtitle class="video-subtitle">
+        <span class="status-badge" [ngClass]="getStatusClass(video.status)">
+          <mat-icon class="status-icon">{{ getStatusIcon(video.status) }}</mat-icon>
+          {{ getStatusText(video.status) }}
+        </span>
+      </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content class="card-content">
+      <div class="info-grid">
+        <div class="info-item">
+          <mat-icon class="info-icon">upload</mat-icon>
+          <div class="info-content">
+            <div class="info-label">Fecha de subida</div>
+            <div class="info-value">{{ video.uploaded_at | date:'medium' }}</div>
+          </div>
+        </div>
+
+        <div class="info-item" *ngIf="video.processed_at">
+          <mat-icon class="info-icon">done_all</mat-icon>
+          <div class="info-content">
+            <div class="info-label">Procesado</div>
+            <div class="info-value">{{ video.processed_at | date:'medium' }}</div>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <mat-icon class="info-icon">how_to_vote</mat-icon>
+          <div class="info-content">
+            <div class="info-label">Votos recibidos</div>
+            <div class="info-value votes-count">{{ video.votes || 0 }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="video-player-section" *ngIf="video.processed_url || video.original_url">
+        <h3 class="section-title">
+          <mat-icon>play_circle_filled</mat-icon>
+          Ver Video
+        </h3>
+        <!-- Video procesado tiene prioridad -->
+        <video *ngIf="video.processed_url" 
+               controls 
+               class="video-player"
+               preload="none"
+               crossorigin="anonymous">
+          <source [src]="getVideoUrl(video, 'processed')" type="video/mp4">
+          Tu navegador no soporta el elemento video.
+        </video>
+        <!-- Video original como fallback -->
+        <video *ngIf="!video.processed_url && video.original_url" 
+               controls 
+               class="video-player"
+               preload="none"
+               crossorigin="anonymous">
+          <source [src]="getVideoUrl(video, 'original')" type="video/mp4">
+          Tu navegador no soporta el elemento video.
+        </video>
+      </div>
+
+      <div class="download-section" *ngIf="video.original_url || video.processed_url">
+        <h3 class="section-title">
+          <mat-icon>download</mat-icon>
+          Descargas disponibles
+        </h3>
+        <div class="download-buttons">
+          <a *ngIf="video.original_url" [href]="normalizeUrl(video.original_url)" target="_blank" download>
+            <button mat-stroked-button color="primary" class="download-btn">
+              <mat-icon>download</mat-icon>
+              Descargar Original
+            </button>
+          </a>
+          <a *ngIf="video.processed_url" [href]="normalizeUrl(video.processed_url)" target="_blank" download>
+            <button mat-flat-button color="accent" class="download-btn">
+              <mat-icon>download</mat-icon>
+              Descargar Procesado
+            </button>
+          </a>
+        </div>
+      </div>
+    </mat-card-content>
+
+    <mat-card-actions class="card-actions">
+      <button mat-stroked-button color="primary" routerLink="/dashboard/videos" class="action-btn">
+        <mat-icon>arrow_back</mat-icon>
+        Volver a Mis Videos
+      </button>
+      <button mat-flat-button color="accent" routerLink="/dashboard/public/videos" class="action-btn">
+        <mat-icon>public</mat-icon>
+        Ver Videos Públicos
+      </button>
+    </mat-card-actions>
+  </mat-card>
+</div>
+
+<div class="loading-state" *ngIf="!video">
+  <mat-card>
+    <mat-card-content class="loading-content">
+      <mat-icon class="loading-icon">video_library</mat-icon>
+      <p>Cargando detalles del video...</p>
+    </mat-card-content>
+  </mat-card>
+</div>
