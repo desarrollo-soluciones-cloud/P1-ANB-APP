@@ -193,7 +193,7 @@ sequenceDiagram
 ### Contenedores y servicios (Docker Compose)
 - **api-anb**: API Gin en `:9090`
 - **worker-anb**: worker de procesamiento
-- **postgres-anb**: DB PostgreSQL
+- **postgres-anb**: DB PostgreSQ
 - **redis-anb**: broker de tareas (Asynq)
 
 ### Pasos de despliegue (local)
