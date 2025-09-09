@@ -102,9 +102,29 @@ export class PublicVideosComponent implements OnInit {
 
   normalizeUrl(url: string) {
     if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  const base = environment.apiUrl?.replace(/\/$/, '');
-  return base ? `${base}${url.startsWith('/') ? '' : '/'}${url}` : url;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    // Para uploads, usar ruta relativa (manejada por nginx proxy)
+    if (url.startsWith('uploads/')) {
+      return `/${url}`;
+    }
+    // Para otras rutas, usar apiUrl
+    const base = environment.apiUrl?.replace(/\/$/, '');
+    return base ? `${base}${url.startsWith('/') ? '' : '/'}${url}` : url;
+  }  getVideoUrl(video: any): string | null {
+    const url = video.processed_url || video.processedUrl;
+    if (!url) return null;
+    
+    // Asegurar que use el puerto correcto del API (9090)
+    const apiBase = 'http://localhost:9090';
+    if (url.startsWith('http')) return url;
+    
+    // Para rutas que empiezan con /uploads, usar directamente el API
+    if (url.startsWith('/uploads') || url.startsWith('uploads')) {
+      const cleanPath = url.startsWith('/') ? url : '/' + url;
+      return `${apiBase}${cleanPath}`;
+    }
+    
+    return `${apiBase}/${url}`;
   }
 
   // Vote action triggered by the UI

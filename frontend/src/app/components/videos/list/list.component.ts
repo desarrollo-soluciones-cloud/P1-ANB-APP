@@ -60,9 +60,26 @@ export class ListVideosComponent implements OnInit {
     if (!url) return null;
     const s = String(url);
     if (s.startsWith('http://') || s.startsWith('https://')) return s;
-    // if server returned a relative path like /uploads/..., prefix with apiUrl
+    // Para uploads, usar ruta relativa (manejada por nginx proxy)
+    if (s.startsWith('uploads/')) {
+      return `/${s}`;
+    }
+    // Para otras rutas, usar apiUrl
     const base = environment.apiUrl?.replace(/\/$/, '');
     return base ? `${base}${s.startsWith('/') ? '' : '/'}${s}` : s;
+  }
+
+  getVideoUrl(video: any, type: 'processed' | 'original'): string | null {
+    const url = type === 'processed' ? this.processedUrl(video) : this.originalUrl(video);
+    if (!url) return null;
+    
+    // Usar ruta relativa para evitar CORS (manejada por nginx proxy)
+    if (url.startsWith('/uploads') || url.startsWith('uploads')) {
+      const cleanPath = url.startsWith('/') ? url : '/' + url;
+      return cleanPath; // Ruta relativa que nginx proxy manejará
+    }
+    
+    return url;
   }
 
   onDelete(video: any) {

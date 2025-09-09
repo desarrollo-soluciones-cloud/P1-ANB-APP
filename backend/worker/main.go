@@ -45,14 +45,18 @@ func (p *TaskProcessor) HandleProcessVideoTask(ctx context.Context, t *asynq.Tas
 
 	// --- LÓGICA DE RUTAS CORREGIDA ---
 
-	// 1. Convertir rutas a absolutas desde el directorio de ejecución actual (backend/)
-	// CORRECCIÓN: Quitamos el "../"
-	introVideoPath, _ := filepath.Abs("intro/anb.mp4")
-	originalVideoPath, _ := filepath.Abs(videoRecord.OriginalURL) // La URL ya es relativa al CWD
+	// 1. Convertir rutas a absolutas usando /app/ como base (montado en Docker)
+	introVideoPath := "/app/intro/anb.mp4"
+	// Asegurar que la ruta original use /app/ como prefijo
+	originalPath := videoRecord.OriginalURL
+	if !strings.HasPrefix(originalPath, "/app/") {
+		originalPath = "/app/" + strings.TrimPrefix(originalPath, "uploads/")
+	}
+	originalVideoPath := originalPath
 	baseName := strings.TrimSuffix(filepath.Base(originalVideoPath), filepath.Ext(originalVideoPath))
 
-	tempDir, _ := filepath.Abs("uploads/temp")
-	processedDir, _ := filepath.Abs("uploads/processed")
+	tempDir := "/app/uploads/temp"
+	processedDir := "/app/uploads/processed"
 	os.MkdirAll(tempDir, os.ModePerm)
 	os.MkdirAll(processedDir, os.ModePerm)
 
@@ -92,7 +96,7 @@ func (p *TaskProcessor) HandleProcessVideoTask(ctx context.Context, t *asynq.Tas
 	videoRecord.Status = "processed"
 	now := time.Now()
 	videoRecord.ProcessedAt = &now
-	videoRecord.ProcessedURL = fmt.Sprintf("uploads/processed/%s.mp4", baseName) // Guardar ruta relativa simple
+	videoRecord.ProcessedURL = fmt.Sprintf("uploads/processed/%s.mp4", baseName) // Guardar ruta relativa para el API
 	if err := p.videoRepo.Update(videoRecord); err != nil {
 		return fmt.Errorf("failed to update video record %d: %w", payload.VideoID, err)
 	}

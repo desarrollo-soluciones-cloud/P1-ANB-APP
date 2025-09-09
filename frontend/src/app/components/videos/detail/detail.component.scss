@@ -140,6 +140,36 @@
     }
   }
   
+  .video-player-section {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 24px;
+    margin-bottom: 24px;
+    
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 20px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      
+      mat-icon {
+        color: #1976d2;
+        font-size: 24px;
+      }
+    }
+    
+    .video-player {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      background: #000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+  }
+  
   .download-section {
     border-top: 1px solid #e0e0e0;
     padding-top: 24px;

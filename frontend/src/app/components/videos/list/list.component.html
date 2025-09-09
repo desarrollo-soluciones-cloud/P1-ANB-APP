@@ -58,19 +58,41 @@
           </div>
         </div>
 
-        <div class="download-links" *ngIf="processedUrl(video) || originalUrl(video)">
-          <a *ngIf="processedUrl(video)" [href]="processedUrl(video)" target="_blank" [attr.download]="''">
-            <button mat-stroked-button color="accent" class="download-btn">
-              <mat-icon>high_quality</mat-icon>
-              Procesado
-            </button>
-          </a>
-          <a *ngIf="originalUrl(video)" [href]="originalUrl(video)" target="_blank" [attr.download]="''">
-            <button mat-stroked-button color="primary" class="download-btn">
-              <mat-icon>video_file</mat-icon>
-              Original
-            </button>
-          </a>
+        <div class="video-player-section" *ngIf="processedUrl(video) || originalUrl(video)">
+          <!-- Video procesado tiene prioridad -->
+          <video *ngIf="processedUrl(video)" 
+                 controls 
+                 class="video-player"
+                 preload="none"
+                 crossorigin="anonymous">
+            <source [src]="getVideoUrl(video, 'processed')" type="video/mp4">
+            Tu navegador no soporta el elemento video.
+          </video>
+          <!-- Video original como fallback si no hay procesado -->
+          <video *ngIf="!processedUrl(video) && originalUrl(video)" 
+                 controls 
+                 class="video-player"
+                 preload="none"
+                 crossorigin="anonymous">
+            <source [src]="getVideoUrl(video, 'original')" type="video/mp4">
+            Tu navegador no soporta el elemento video.
+          </video>
+          
+          <!-- Enlaces de descarga -->
+          <div class="download-links">
+            <a *ngIf="processedUrl(video)" [href]="processedUrl(video)" target="_blank" download>
+              <button mat-stroked-button color="accent" class="download-btn">
+                <mat-icon>download</mat-icon>
+                Descargar Procesado
+              </button>
+            </a>
+            <a *ngIf="originalUrl(video)" [href]="originalUrl(video)" target="_blank" download>
+              <button mat-stroked-button color="primary" class="download-btn">
+                <mat-icon>download</mat-icon>
+                Descargar Original
+              </button>
+            </a>
+          </div>
         </div>
       </mat-card-content>
 

@@ -210,21 +210,34 @@
     }
   }
   
-  .download-links {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
+  .video-player-section {
+    margin: 16px 0;
     
-    .download-btn {
+    .video-player {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      background: #000;
+      margin-bottom: 12px;
+    }
+    
+    .download-links {
       display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      border-radius: 6px;
-      font-size: 13px;
+      gap: 12px;
+      flex-wrap: wrap;
       
-      mat-icon {
-        font-size: 16px;
+      .download-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        
+        mat-icon {
+          font-size: 16px;
+        }
       }
     }
   }

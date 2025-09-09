@@ -41,6 +41,23 @@ export class VideoDetailComponent implements OnInit {
     return base ? `${base}${s.startsWith('/') ? '' : '/'}${s}` : s;
   }
 
+  getVideoUrl(video: any, type: 'processed' | 'original'): string | null {
+    const url = type === 'processed' ? video.processed_url : video.original_url;
+    if (!url) return null;
+    
+    // Asegurar que use el puerto correcto del API (9090)
+    const apiBase = 'http://localhost:9090';
+    if (url.startsWith('http')) return url;
+    
+    // Para rutas que empiezan con /uploads, usar directamente el API
+    if (url.startsWith('/uploads') || url.startsWith('uploads')) {
+      const cleanPath = url.startsWith('/') ? url : '/' + url;
+      return `${apiBase}${cleanPath}`;
+    }
+    
+    return `${apiBase}/${url}`;
+  }
+
   getStatusClass(status: string): string {
     const s = (status || '').toLowerCase();
     if (s === 'processed') return 'status-processed';

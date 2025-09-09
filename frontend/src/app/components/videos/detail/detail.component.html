@@ -47,22 +47,47 @@
         </div>
       </div>
 
+      <div class="video-player-section" *ngIf="video.processed_url || video.original_url">
+        <h3 class="section-title">
+          <mat-icon>play_circle_filled</mat-icon>
+          Ver Video
+        </h3>
+        <!-- Video procesado tiene prioridad -->
+        <video *ngIf="video.processed_url" 
+               controls 
+               class="video-player"
+               preload="none"
+               crossorigin="anonymous">
+          <source [src]="getVideoUrl(video, 'processed')" type="video/mp4">
+          Tu navegador no soporta el elemento video.
+        </video>
+        <!-- Video original como fallback -->
+        <video *ngIf="!video.processed_url && video.original_url" 
+               controls 
+               class="video-player"
+               preload="none"
+               crossorigin="anonymous">
+          <source [src]="getVideoUrl(video, 'original')" type="video/mp4">
+          Tu navegador no soporta el elemento video.
+        </video>
+      </div>
+
       <div class="download-section" *ngIf="video.original_url || video.processed_url">
         <h3 class="section-title">
           <mat-icon>download</mat-icon>
           Descargas disponibles
         </h3>
         <div class="download-buttons">
-          <a *ngIf="video.original_url" [href]="normalizeUrl(video.original_url)" target="_blank" [attr.download]="''">
+          <a *ngIf="video.original_url" [href]="normalizeUrl(video.original_url)" target="_blank" download>
             <button mat-stroked-button color="primary" class="download-btn">
-              <mat-icon>video_file</mat-icon>
-              Video Original
+              <mat-icon>download</mat-icon>
+              Descargar Original
             </button>
           </a>
-          <a *ngIf="video.processed_url" [href]="normalizeUrl(video.processed_url)" target="_blank" [attr.download]="''">
+          <a *ngIf="video.processed_url" [href]="normalizeUrl(video.processed_url)" target="_blank" download>
             <button mat-flat-button color="accent" class="download-btn">
-              <mat-icon>high_quality</mat-icon>
-              Video Procesado
+              <mat-icon>download</mat-icon>
+              Descargar Procesado
             </button>
           </a>
         </div>

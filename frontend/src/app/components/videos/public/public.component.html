@@ -66,16 +66,17 @@
       </div>
 
       <mat-card-content class="card-content">
+        <div class="video-player-section" *ngIf="video.processed_url || video.processedUrl">
+          <video controls 
+                 class="video-player"
+                 preload="none"
+                 crossorigin="anonymous">
+            <source [src]="getVideoUrl(video)" type="video/mp4">
+            Tu navegador no soporta el elemento video.
+          </video>
+        </div>
+        
         <div class="video-actions">
-          <a *ngIf="video.processed_url || video.processedUrl" 
-             [href]="normalizeUrl(video.processed_url || video.processedUrl)" 
-             target="_blank" 
-             [attr.download]="''">
-            <button mat-flat-button color="primary" class="watch-btn">
-              <mat-icon>play_circle_filled</mat-icon>
-              Ver Video
-            </button>
-          </a>
           
           <div class="vote-section">
             <button 
