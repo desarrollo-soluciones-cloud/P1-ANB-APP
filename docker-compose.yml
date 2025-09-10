@@ -32,7 +32,7 @@ services:
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     volumes:
-      - ./backend/uploads:/app/uploads
+      - uploads-data:/app/uploads
     env_file:
       - .env
     depends_on:
@@ -47,8 +47,8 @@ services:
       dockerfile: Dockerfile
     command: /worker_server
     volumes:
-      - ./backend/uploads:/app/uploads
-      - ./backend/intro:/app/intro
+      - uploads-data:/app/uploads
+      - intro-data:/app/intro
     env_file:
       - .env
     depends_on:
@@ -73,10 +73,6 @@ services:
       - ./backend:/app
     command: sh -c "go test ./... -v -cover"
 
-
-
-  
-
   # Frontend service
   frontend:
     container_name: frontend-anb
@@ -92,3 +88,5 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  uploads-data:
+  intro-data:
