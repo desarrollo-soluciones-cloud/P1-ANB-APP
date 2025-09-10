@@ -9,7 +9,9 @@ Este documento centraliza toda la información técnica requerida para la entreg
 El modelo de datos de la aplicación se representa mediante un **Diagrama Entidad-Relación (ERD)**, el cual describe las entidades principales, sus atributos y las relaciones entre ellas.
 
 ### Diagrama Entidad-Relación
-[Ver diagrama ERD](./diagrama-ERD.png)
+
+<img width="547" height="690" alt="diagrama-ERD" src="https://github.com/user-attachments/assets/721e0efa-a6bf-4ffe-b69e-da7aee26d331" />
+
 
 ### Descripción de entidades y relaciones
 - **Users**  
@@ -46,7 +48,7 @@ Esta documentación contiene todos los endpoints de la Implementación de una AP
 
 ## 3. Diagrama de Componentes
 
-*(pendiente de completar: representación de backend, worker, broker y base de datos)*
+<img width="725" height="721" alt="diagrama_componentes" src="https://github.com/user-attachments/assets/5bcee35e-ba98-4641-932e-ce0ff66ac6ec" />
 
 ---
 
