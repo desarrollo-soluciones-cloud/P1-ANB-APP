@@ -91,6 +91,48 @@ El siguiente diagrama representa el flujo completo de interacción dentro de la 
 
 ## 6. Reporte de Análisis de SonarQube
 
-*(pendiente de completar: métricas de bugs, vulnerabilidades, code smells, cobertura de pruebas unitarias, duplicación de código, estado del Quality Gate)*
+## Reporte de Análisis SonarQube – Rama *dev* (P1-ANB-APP)
 
----
+El siguiente reporte corresponde al análisis realizado con **SonarQube Community** sobre la rama `dev` del proyecto **P1-ANB-APP**.  
+
+El resultado global indica que el proyecto **pasa el Quality Gate**, aunque con advertencias importantes que deben atenderse.
+
+### Métricas principales
+
+1. **Quality Gate**
+   - **Estado:**  *Passed*  
+   - El código cumple con las condiciones mínimas de calidad.  
+
+2. **Security (Seguridad)**
+   - **0 Open Issues** → Calificación **A**.  
+   - No se detectaron vulnerabilidades.  
+   - **Security Hotspots:** 7 → requieren revisión manual (uso de librerías, cifrado, credenciales).
+
+3. **Reliability (Fiabilidad)**
+   - **1 Open Issue** → Calificación **A**.  
+   - Excelente nivel de fiabilidad.
+
+4. **Maintainability (Mantenibilidad)**
+   - **70 Open Issues** → Calificación **B**.  
+   - Existen problemas de complejidad y legibilidad que afectan el mantenimiento del código.
+
+5. **Coverage (Cobertura de pruebas)**
+   - **0.0%** sobre **1.3k líneas a cubrir**.  
+   - No se cuenta con pruebas unitarias, lo que incrementa el riesgo de errores no detectados.
+
+6. **Duplications (Duplicación de código)**
+   - **4.9%** sobre **8.6k líneas**.  
+   - Se identificó casi un 5% de código duplicado, lo que dificulta el mantenimiento.
+
+### Conclusiones
+- **Fortalezas:**  
+  - No hay vulnerabilidades críticas de seguridad.  
+  - Muy buena fiabilidad (solo 1 issue).  
+  - El Quality Gate está aprobado.  
+
+- **Debilidades:**  
+  - Cobertura de pruebas **0%** → urge implementar tests unitarios.  
+  - Duplicación del **4.9%** → se recomienda refactorizar.  
+  - **70 issues de mantenibilidad** → reducir complejidad y mejorar legibilidad.  
+  - 7 *security hotspots* → revisión manual obligatoria.  
+
