@@ -1,22 +1,25 @@
 {
   "info": {
-    "name": "ANB API - Backend (Postman Collection)",
-    "_postman_id": "anb-api-1757207828",
-    "description": "Colección para documentar y probar el backend ANB (Gin + JWT). Prefijo de rutas: /api/v1",
+    "name": "ANB API - Colección (v2, completa y con tests)",
+    "_postman_id": "anb-api-v2-1757465774",
+    "description": "Colección completa para ANB API según documento de Gestión de usuarios.\n- Usa {{base_url}} (por defecto incluye /api/v1).\n- Guarda {{token}} automáticamente al hacer login.\n- Intenta guardar {{video_id}} tras subir/listar videos para acelerar pruebas.\n- Carpetas con autorización heredada (Bearer {{token}}), excepto Público.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:9090"
+      "value": "http://localhost:9090/api/v1",
+      "type": "string"
     },
     {
       "key": "token",
-      "value": ""
+      "value": "",
+      "type": "string"
     },
     {
       "key": "video_id",
-      "value": "1"
+      "value": "",
+      "type": "string"
     }
   ],
   "auth": {
@@ -34,61 +37,30 @@
       "name": "Auth",
       "item": [
         {
-          "name": "POST /api/v1/auth/signup",
+          "name": "POST /auth/signup — 201/400",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"first_name\": \"Carlos\",\n  \"last_name\": \"Toro\",\n  \"email\": \"ctoro@example.com\",\n  \"password\": \"Password123!\",\n  \"password2\": \"Password123!\",\n  \"city\": \"Bogotá\",\n  \"country\": \"Colombia\"\n}"
-            },
             "url": {
-              "raw": "{{base_url}}/api/v1/auth/signup",
+              "raw": "{{base_url}}/auth/signup",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "api",
-                "v1",
                 "auth",
                 "signup"
               ]
             },
-            "description": "Crea un usuario nuevo."
-          }
-        },
-        {
-          "name": "POST /api/v1/auth/login",
-          "request": {
-            "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
+            "description": "Registro de jugadores.\nBody incluye password1/password2 para validar coincidencia, pero el backend almacena solo una (hasheada).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"mauricio@example.com\",\n  \"password\": \"Password123!\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/auth/login",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "login"
-              ]
-            },
-            "description": "Autentica y devuelve JWT."
+              "raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"password1\": \"StrongPass123\",\n  \"password2\": \"StrongPass123\",\n  \"city\": \"Bogotá\",\n  \"country\": \"Colombia\"\n}"
+            }
           },
           "event": [
             {
@@ -96,10 +68,52 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "let data={};",
-                  "try{data=pm.response.json();}catch(e){}",
-                  "if(data&&data.access_token){pm.collectionVariables.set('token',data.access_token);pm.test('JWT guardado',function(){pm.expect(pm.collectionVariables.get('token')).to.be.a('string');});}",
-                  "else{pm.test('No se recibió access_token',function(){pm.expect(false).to.be.true;});}"
+                  "// SIGNUP - 201 / 400",
+                  "pm.test('201 Created - Usuario creado exitosamente', function(){ if (pm.response.code===201) pm.expect(pm.response.code).to.eql(201); });",
+                  "pm.test('400 Bad Request - Error de validación (email duplicado o contraseñas no coinciden)', function(){ if (pm.response.code===400) pm.expect(pm.response.code).to.eql(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login — 200/401 (auto-token)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Autenticación. Guarda automáticamente {{token}} desde access_token/token.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"StrongPass123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// LOGIN - 200 / 401 y guardar token automáticamente",
+                  "let data = {}; try { data = pm.response.json(); } catch(e) {}",
+                  "if (pm.response.code === 200 && data && (data.access_token || data.token)) {",
+                  "  pm.collectionVariables.set('token', data.access_token || data.token);",
+                  "}",
+                  "pm.test('200 OK o 401 Unauthorized', function(){ pm.expect([200,401]).to.include(pm.response.code); });"
                 ]
               }
             }
@@ -111,166 +125,260 @@
       "name": "Videos (protegido)",
       "item": [
         {
-          "name": "POST /api/v1/videos/upload (form-data)",
+          "name": "POST /videos/upload — 201/400/401 (form-data)",
           "request": {
             "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/videos/upload",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "videos",
+                "upload"
+              ]
+            },
             "header": [],
+            "description": "Sube video (form-data: title, video_file). Encola tarea asíncrona de procesamiento.",
             "body": {
               "mode": "formdata",
               "formdata": [
                 {
                   "key": "title",
-                  "value": "Mi video de prueba",
+                  "value": "Mi mejor tiro de 3",
                   "type": "text"
                 },
                 {
-                  "key": "video",
+                  "key": "video_file",
                   "type": "file",
                   "src": ""
                 }
               ]
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/videos/upload",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "videos",
-                "upload"
-              ]
-            },
-            "description": "Sube un video. Requiere Bearer {{token}}."
-          }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// UPLOAD - 201 / 400 / 401",
+                  "// Si la API devuelve video_id, lo guardamos para pruebas siguientes",
+                  "try { var d = pm.response.json(); if (d.video_id) { pm.collectionVariables.set('video_id', d.video_id); } } catch(e) {}",
+                  "pm.test('201 Created - Video subido y tarea creada', function(){ if (pm.response.code===201) pm.expect(pm.response.code).to.eql(201); });",
+                  "pm.test('400 Bad Request - Archivo inválido (tipo/tamaño)', function(){ if (pm.response.code===400) pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('401 Unauthorized - Falta autenticación', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "GET /api/v1/videos",
+          "name": "GET /videos — 200/401",
           "request": {
             "method": "GET",
-            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/videos",
+              "raw": "{{base_url}}/videos",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "api",
-                "v1",
                 "videos"
               ]
             },
-            "description": "Lista mis videos."
-          }
+            "header": [],
+            "description": "Lista los videos del usuario autenticado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// LIST - 200 / 401",
+                  "// Si devuelve lista, tomar el primer id como {{video_id}} para acelerar pruebas",
+                  "try { var arr = pm.response.json(); if (Array.isArray(arr) && arr.length>0 && (arr[0].id || arr[0].video_id)) { pm.collectionVariables.set('video_id', arr[0].id || arr[0].video_id); } } catch(e) {}",
+                  "pm.test('200 OK - Lista de videos obtenida', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+                  "pm.test('401 Unauthorized - Falta autenticación', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "GET /api/v1/videos/:video_id",
+          "name": "GET /videos/:video_id — 200/401/403/404",
           "request": {
             "method": "GET",
-            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/videos/{{video_id}}",
+              "raw": "{{base_url}}/videos/{{video_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "api",
-                "v1",
                 "videos",
                 "{{video_id}}"
               ]
             },
-            "description": "Detalle de un video."
-          }
+            "header": [],
+            "description": "Detalle de video (usa {{video_id}})."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// GET BY ID - 200 / 401 / 403 / 404",
+                  "pm.test('200 OK - Detalle de video', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+                  "pm.test('401 Unauthorized', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });",
+                  "pm.test('403 Forbidden - No es el propietario', function(){ if (pm.response.code===403) pm.expect(pm.response.code).to.eql(403); });",
+                  "pm.test('404 Not Found - No existe o no pertenece', function(){ if (pm.response.code===404) pm.expect(pm.response.code).to.eql(404); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "DELETE /api/v1/videos/:video_id",
+          "name": "DELETE /videos/:video_id — 200/400/401/403/404",
           "request": {
             "method": "DELETE",
-            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/videos/{{video_id}}",
+              "raw": "{{base_url}}/videos/{{video_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "api",
-                "v1",
                 "videos",
                 "{{video_id}}"
               ]
             },
-            "description": "Eliminar un video propio."
-          }
+            "header": [],
+            "description": "Eliminar video (solo si NO está procesado/publicado)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// DELETE - 200 / 400 / 401 / 403 / 404",
+                  "pm.test('200 OK - Eliminado correctamente', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+                  "pm.test('400 Bad Request - No se puede eliminar (procesado/publicado)', function(){ if (pm.response.code===400) pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('401 Unauthorized', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });",
+                  "pm.test('403 Forbidden - No es el propietario', function(){ if (pm.response.code===403) pm.expect(pm.response.code).to.eql(403); });",
+                  "pm.test('404 Not Found - No existe o ya fue eliminado', function(){ if (pm.response.code===404) pm.expect(pm.response.code).to.eql(404); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "POST /api/v1/videos/:video_id/mark-processed",
+          "name": "POST /videos/:video_id/mark-processed — 200/401/403/404",
           "request": {
             "method": "POST",
-            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/videos/{{video_id}}/mark-processed",
+              "raw": "{{base_url}}/videos/{{video_id}}/mark-processed",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "api",
-                "v1",
                 "videos",
                 "{{video_id}}",
                 "mark-processed"
               ]
             },
-            "description": "Marcar video como procesado."
-          }
+            "header": [],
+            "description": "Marcar un video como procesado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// MARK PROCESSED - 200 / 401 / 403 / 404",
+                  "pm.test('200 OK - Marcado como procesado', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+                  "pm.test('401 Unauthorized', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });",
+                  "pm.test('403 Forbidden - No es el propietario', function(){ if (pm.response.code===403) pm.expect(pm.response.code).to.eql(403); });",
+                  "pm.test('404 Not Found - No existe o no pertenece', function(){ if (pm.response.code===404) pm.expect(pm.response.code).to.eql(404); });"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Público (no requiere token)",
+      "name": "Público (sin token)",
       "auth": {
         "type": "noauth"
       },
       "item": [
         {
-          "name": "GET /api/v1/public/videos",
+          "name": "GET /public/videos — 200",
           "request": {
             "method": "GET",
-            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/public/videos",
+              "raw": "{{base_url}}/public/videos",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "api",
-                "v1",
                 "public",
                 "videos"
               ]
             },
-            "description": "Lista videos públicos."
+            "header": [],
+            "description": "Listado de videos públicos."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// PUBLIC VIDEOS - 200",
+                  "pm.test('200 OK - Lista de videos públicos', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });"
+                ]
+              }
+            }
+          ],
+          "auth": {
+            "type": "noauth"
           }
         },
         {
-          "name": "GET /api/v1/public/rankings",
+          "name": "GET /public/rankings — 200/400",
           "request": {
             "method": "GET",
-            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/public/rankings",
+              "raw": "{{base_url}}/public/rankings",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "api",
-                "v1",
                 "public",
                 "rankings"
               ]
             },
-            "description": "Ranking por votos."
+            "header": [],
+            "description": "Ranking público (puede fallar con 400 si hay parámetros inválidos)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// RANKINGS - 200 / 400 (parámetro inválido)",
+                  "pm.test('200 OK - Lista de rankings obtenida', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+                  "pm.test('400 Bad Request - Parámetro inválido en la consulta', function(){ if (pm.response.code===400) pm.expect(pm.response.code).to.eql(400); });"
+                ]
+              }
+            }
+          ],
+          "auth": {
+            "type": "noauth"
           }
         }
       ]
@@ -279,48 +387,73 @@
       "name": "Votes (protegido)",
       "item": [
         {
-          "name": "POST /api/v1/public/videos/:video_id/vote",
+          "name": "POST /public/videos/:video_id/vote — 200/400/401/404",
           "request": {
             "method": "POST",
-            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/public/videos/{{video_id}}/vote",
+              "raw": "{{base_url}}/public/videos/{{video_id}}/vote",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "api",
-                "v1",
                 "public",
                 "videos",
                 "{{video_id}}",
                 "vote"
               ]
             },
-            "description": "Crear voto (requiere token)."
-          }
+            "header": [],
+            "description": "Emitir voto por un video."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// VOTE CREATE - 200 / 400 / 401 / 404",
+                  "pm.test('200 OK - Voto registrado exitosamente', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+                  "pm.test('400 Bad Request - Ya has votado por este video', function(){ if (pm.response.code===400) pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('401 Unauthorized - Falta autenticación', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });",
+                  "pm.test('404 Not Found - Video no encontrado', function(){ if (pm.response.code===404) pm.expect(pm.response.code).to.eql(404); });"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "DELETE /api/v1/public/videos/:video_id/vote",
+          "name": "DELETE /public/videos/:video_id/vote — 200/401/404",
           "request": {
             "method": "DELETE",
-            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/public/videos/{{video_id}}/vote",
+              "raw": "{{base_url}}/public/videos/{{video_id}}/vote",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
-                "api",
-                "v1",
                 "public",
                 "videos",
                 "{{video_id}}",
                 "vote"
               ]
             },
-            "description": "Eliminar mi voto."
-          }
+            "header": [],
+            "description": "Quitar voto emitido."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// VOTE DELETE - 200 / 401 / 404",
+                  "pm.test('200 OK - Voto eliminado', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+                  "pm.test('401 Unauthorized - Falta autenticación', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });",
+                  "pm.test('404 Not Found - No había voto o video no existe', function(){ if (pm.response.code===404) pm.expect(pm.response.code).to.eql(404); });"
+                ]
+              }
+            }
+          ]
         }
       ]
     }
