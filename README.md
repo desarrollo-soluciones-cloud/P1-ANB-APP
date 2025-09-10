@@ -44,13 +44,13 @@ ANB-APP/
 │   ├── src/              # Código fuente
 │   ├── Dockerfile        # Imagen Docker
 │   ├── default.conf      # Configuración Nginx
-│   └── README.md         # 📖 Documentación Frontend
+│   └── README.md         # Documentación Frontend
 ├── backend/              # API en Go
 │   ├── src/              # Código fuente organizado por módulos
 │   ├── worker/           # Procesador asíncrono
 │   ├── uploads/          # Archivos de video
 │   ├── Dockerfile        # Imagen Docker
-│   └── readme.md         # 📖 Documentación Backend
+│   └── readme.md         # Documentación Backend
 ├── docker-compose.yml    # Orquestación de servicios
 ├── .env.example          # Variables de entorno
 └── README.md            # Este archivo
@@ -271,6 +271,10 @@ docker exec postgres-anb pg_dump -U anb_user anb_db > backup.sql
 # Backup de videos
 tar -czf videos_backup.tar.gz backend/uploads/
 ```
+
+# SonarQube
+
+Se encuentra en la wiki del repo.
 
 ### Estándares
 - **Backend**: Convenciones de Go, tests unitarios

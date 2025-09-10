@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres-anb:
     image: postgres:15-alpine
@@ -8,20 +6,34 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --data-checksums"
     ports:
       - "5433:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   redis-anb:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: redis-anb
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
 
   api:
     container_name: api-anb
@@ -32,12 +44,16 @@ services:
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     volumes:
-      - uploads-data:/app/uploads
+      - ./backend/uploads:/app/uploads:rw
+      - intro-data:/app/intro
+      - logs-data:/app/logs
     env_file:
       - .env
     depends_on:
-      - postgres-anb
-      - redis-anb
+      postgres-anb:
+        condition: service_healthy
+      redis-anb:
+        condition: service_healthy
     restart: unless-stopped
 
   worker:
@@ -47,16 +63,20 @@ services:
       dockerfile: Dockerfile
     command: /worker_server
     volumes:
-      - uploads-data:/app/uploads
+      - ./backend/uploads:/app/uploads:rw
       - intro-data:/app/intro
+      - logs-data:/app/logs
     env_file:
       - .env
     depends_on:
-      - postgres-anb
-      - redis-anb
+      postgres-anb:
+        condition: service_healthy
+      redis-anb:
+        condition: service_healthy
+      api:
+        condition: service_started
     restart: unless-stopped
     
- # --- SERVICIO DE TESTS ---
   test:
     container_name: test-anb
     build:
@@ -65,15 +85,16 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres-anb
-      - redis-anb
+      postgres-anb:
+        condition: service_healthy
+      redis-anb:
+        condition: service_healthy
     profiles:
       - test
     volumes:
       - ./backend:/app
     command: sh -c "go test ./... -v -cover"
 
-  # Frontend service
   frontend:
     container_name: frontend-anb
     build:
@@ -82,11 +103,38 @@ services:
     ports:
       - "3001:80"
     depends_on:
-      - api
+      api:
+        condition: service_started
     restart: unless-stopped
+
+  adminer:
+    image: adminer:latest
+    container_name: anb-adminer
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres-anb
+      - ADMINER_PLUGINS=tables-filter tinymce
+    depends_on:
+      postgres-anb:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - debug
 
 volumes:
   postgres-data:
+    driver: local
   redis-data:
+    driver: local
   uploads-data:
+    driver: local
   intro-data:
+    driver: local
+  logs-data:
+    driver: local
+
+networks:
+  default:
+    name: anb-network
+    driver: bridge

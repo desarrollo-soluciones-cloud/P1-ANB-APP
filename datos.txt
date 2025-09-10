@@ -1,0 +1,185 @@
+DOCUMENTACION: POBLADO AUTOMATICO DE BASE DE DATOS ANB
+
+===============================================================================
+
+METODO DE POBLADO
+
+La base de datos se pobla automaticamente mediante un script SQL que se ejecuta 
+durante la inicializacion de PostgreSQL en Docker. Este mecanismo utiliza la 
+funcionalidad nativa de PostgreSQL que ejecuta automaticamente cualquier archivo 
+.sql ubicado en /docker-entrypoint-initdb.d/ cuando el contenedor se crea por 
+primera vez.
+
+===============================================================================
+
+UBICACION DEL SCRIPT
+
+Archivo: backend/database/init/01-complete-schema.sql
+
+Mapeo en Docker:
+- Directorio local: ./backend/database/init/
+- Directorio en contenedor: /docker-entrypoint-initdb.d/
+
+===============================================================================
+
+PROCESO DE INICIALIZACION
+
+1. Al ejecutar docker-compose up, PostgreSQL se inicia en un contenedor limpio
+2. PostgreSQL detecta archivos SQL en /docker-entrypoint-initdb.d/
+3. Ejecuta 01-complete-schema.sql automaticamente
+4. El script crea las tablas y datos de prueba
+5. La aplicacion Go detecta que las tablas ya existen y omite sus migraciones
+
+===============================================================================
+
+ESTRUCTURA DE DATOS POBLADOS
+
+USUARIOS (8 registros)
+- carlos@anb.com - Carlos Lopez (Bogota, Colombia)
+- maria@anb.com - Maria Garcia (Medellin, Colombia)  
+- luis@anb.com - Luis Rodriguez (Cali, Colombia)
+- ana@anb.com - Ana Martinez (Barranquilla, Colombia)
+- miguel@anb.com - Miguel Hernandez (Cartagena, Colombia)
+- sofia@anb.com - Sofia Ramirez (Bucaramanga, Colombia)
+- diego@anb.com - Diego Torres (Pereira, Colombia)
+- camila@anb.com - Camila Vasquez (Manizales, Colombia)
+
+Contrasena universal: password (hasheada con bcrypt)
+
+===============================================================================
+
+VIDEOS (24 registros)
+
+Por Estado:
+- 18 videos procesados (status: 'processed')
+- 5 videos subidos (status: 'uploaded')
+- 1 video fallido (status: 'failed')
+
+Distribucion por Usuario:
+- Carlos Lopez: 4 videos (3 procesados, 1 pendiente)
+- Maria Garcia: 4 videos (3 procesados, 1 pendiente)
+- Luis Rodriguez: 4 videos (3 procesados, 1 fallido)
+- Ana Martinez: 3 videos (2 procesados, 1 pendiente)
+- Miguel Hernandez: 3 videos (2 procesados, 1 pendiente)
+- Sofia Ramirez: 2 videos (2 procesados)
+- Diego Torres: 2 videos (2 procesados)
+- Camila Vasquez: 2 videos (1 procesado, 1 pendiente)
+
+Videos Mas Populares:
+1. "Dunk Espectacular de Luis - Mate con giro 360°" - 67 votos
+2. "Defensa Perfecta de Maria - Robo y contraataque" - 52 votos
+3. "Jugada Espectacular de Carlos - Triple desde media cancha" - 45 votos
+4. "Robo y Contraataque Lightning" - 41 votos
+5. "Triple Decisivo en el ultimo segundo" - 38 votos
+
+===============================================================================
+
+VOTOS (76 registros)
+
+Logica de Votacion:
+- Cada usuario puede votar maximo una vez por video
+- Los usuarios NO pueden votar por sus propios videos
+- Los votos estan distribuidos de manera realista entre todos los videos procesados
+- Los votos tienen fechas historicas (desde hace 9 dias hasta hace 1 dia)
+
+Distribucion de Votos por Usuario:
+- Carlos: 8 votos dados
+- Maria: 9 votos dados
+- Luis: 9 votos dados
+- Ana: 10 votos dados
+- Miguel: 9 votos dados
+- Sofia: 9 votos dados
+- Diego: 9 votos dados
+- Camila: 13 votos dados
+
+===============================================================================
+
+CARACTERISTICAS TECNICAS
+
+ESQUEMA DE BASE DE DATOS
+
+Tabla users:
+- id (SERIAL PRIMARY KEY)
+- first_name (VARCHAR)
+- last_name (VARCHAR)
+- email (VARCHAR UNIQUE)
+- password (VARCHAR - bcrypt hash)
+- city (VARCHAR)
+- country (VARCHAR)
+- created_at (TIMESTAMP)
+- updated_at (TIMESTAMP)
+
+Tabla videos:
+- id (SERIAL PRIMARY KEY)
+- user_id (INTEGER FK)
+- title (VARCHAR)
+- status (VARCHAR: 'uploaded', 'processed', 'failed')
+- original_url (VARCHAR)
+- processed_url (VARCHAR)
+- vote_count (INTEGER DEFAULT 0)
+- uploaded_at (TIMESTAMP)
+- processed_at (TIMESTAMP)
+
+Tabla votes:
+- id (SERIAL PRIMARY KEY)
+- user_id (INTEGER FK)
+- video_id (INTEGER FK)
+- voted_at (TIMESTAMP)
+- created_at (TIMESTAMP)
+- UNIQUE(user_id, video_id)
+
+INDICES OPTIMIZADOS:
+- idx_videos_user_id - Consultas por usuario
+- idx_videos_status - Filtros por estado
+- idx_videos_vote_count - Rankings ordenados
+- idx_votes_user_id - Votos por usuario
+- idx_votes_video_id - Votos por video
+- idx_users_email - Login por email
+
+===============================================================================
+
+VENTAJAS DEL METODO
+
+1. Automatico: No requiere pasos manuales despues del docker-compose up
+2. Consistente: Siempre genera los mismos datos de prueba
+3. Rapido: Se ejecuta una sola vez durante la inicializacion
+4. Realista: Datos que simulan un entorno de produccion real
+5. Completo: Incluye relaciones complejas entre usuarios, videos y votos
+
+===============================================================================
+
+DATOS DE PRUEBA REALISTAS
+
+Los datos estan disenados para simular una plataforma real de basketball:
+- Nombres de videos descriptivos y realistas
+- Distribucion natural de votos (algunos videos muy populares, otros menos)
+- Fechas historicas que simulan actividad temporal
+- Usuarios de diferentes ciudades colombianas
+- Variedad en estados de procesamiento de videos
+
+===============================================================================
+
+VERIFICACION DE DATOS
+
+Para verificar que los datos se poblaron correctamente:
+
+-- Contar registros por tabla
+SELECT 'users' as tabla, COUNT(*) FROM users
+UNION ALL
+SELECT 'videos', COUNT(*) FROM videos
+UNION ALL
+SELECT 'votes', COUNT(*) FROM votes;
+
+-- Ver top videos por votos
+SELECT title, vote_count 
+FROM videos 
+WHERE status = 'processed' 
+ORDER BY vote_count DESC 
+LIMIT 5;
+
+Resultado esperado:
+- users: 8
+- videos: 24  
+- votes: 76
+
+===============================================================================
