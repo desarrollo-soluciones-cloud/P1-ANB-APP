@@ -44,13 +44,13 @@ ANB-APP/
 │   ├── src/              # Código fuente
 │   ├── Dockerfile        # Imagen Docker
 │   ├── default.conf      # Configuración Nginx
-│   └── README.md         # 📖 Documentación Frontend
+│   └── README.md         # Documentación Frontend
 ├── backend/              # API en Go
 │   ├── src/              # Código fuente organizado por módulos
 │   ├── worker/           # Procesador asíncrono
 │   ├── uploads/          # Archivos de video
 │   ├── Dockerfile        # Imagen Docker
-│   └── readme.md         # 📖 Documentación Backend
+│   └── readme.md         # Documentación Backend
 ├── docker-compose.yml    # Orquestación de servicios
 ├── .env.example          # Variables de entorno
 └── README.md            # Este archivo
@@ -275,13 +275,6 @@ tar -czf videos_backup.tar.gz backend/uploads/
 # SonarQube
 
 Se encuentra en la wiki del repo.
-
-## Contribución
-
-1. Fork del repositorio
-2. Crear branch para nueva funcionalidad: `git checkout -b feature/nueva-caracteristica`
-3. Realizar cambios y commits descriptivos
-4. Crear Pull Request con descripción detallada
 
 ### Estándares
 - **Backend**: Convenciones de Go, tests unitarios
