@@ -64,7 +64,7 @@ La documentación completa de la API está disponible en la carpeta `collections
 - **ANB_Environment.json** - Ambiente de desarrollo (puerto 9090)
 - **README.md** - Documentación y guía de uso
 
-[Ir a la carpeta de collections](../../collections/)
+[Ir a la carpeta de collections](../collections/)
 
 
 ---
