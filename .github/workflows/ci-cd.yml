@@ -111,7 +111,7 @@ jobs:
 
     - name: Build frontend
       working-directory: ./frontend
-      run: ng build --configuration production
+      run: npx ng build --configuration production
 
   # Job 3: Build and Push Images
   build-and-push:
