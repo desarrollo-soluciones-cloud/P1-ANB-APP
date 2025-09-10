@@ -44,7 +44,42 @@ El modelo de datos de la aplicación se representa mediante un **Diagrama Entida
 
 ## 4. Diagrama de Flujo de Procesos
 
-*(pendiente de completar: descripción detallada de carga, procesamiento y entrega de archivos)*
+
+## 📈 Diagrama de flujo de procesos
+
+El siguiente diagrama representa el flujo completo de interacción dentro de la API. Resume cómo los usuarios y el público general pueden usar el sistema, desde el **registro de jugadores** hasta la **participación en votaciones** y la **consulta de rankings**.
+
+![Diagrama de flujo del proceso](Diagrama%20de%20flujo%20de%20proceso%20API%20RESK.png)
+
+### 🔹 Explicación del flujo
+
+1. **Inicio del proceso**  
+   El usuario puede optar por registrarse en la plataforma para participar activamente o, si no desea autenticarse, puede consultar directamente el ranking público de jugadores.
+
+2. **Gestión de usuarios**  
+   - **Registro de usuarios:** Los jugadores aficionados crean una cuenta. El sistema valida que el email no esté duplicado y que las contraseñas coincidan.  
+   - **Login:** Una vez registrado, el jugador debe autenticarse con sus credenciales. Si la autenticación es correcta, obtiene un *token JWT* que será utilizado en todas las operaciones protegidas.
+
+3. **Gestión de videos (requiere autenticación)**  
+   - **Ver mis videos:** El usuario autenticado puede listar todos los videos que ha subido, junto con su estado de procesamiento.  
+   - **Subir video:** Permite cargar un archivo en formato MP4. Inmediatamente se encola una tarea asíncrona de procesamiento (recorte, ajuste de formato y agregado de logos).  
+   - **Eliminar video:** El sistema valida:  
+     - Si el video ya fue procesado o publicado → *No se puede eliminar*.  
+     - Si el video aún no está procesado → *Eliminado exitosamente*.  
+   - **Marcar video como procesado:** Acción que actualiza el estado del archivo cuando el worker termina su tarea.
+
+4. **Sistema de votación (requiere autenticación)**  
+   - **Votar video:** El usuario registrado puede votar por un video público habilitado. Posibles resultados:  
+     - *Voto registrado exitosamente*.  
+     - *Ya has votado por este video*.  
+     - *No está autenticado* (si falta el token).  
+     - *Video no encontrado* (si el ID no existe o no pertenece a los videos públicos).  
+   - **Quitar voto:** El jugador puede retirar su voto de un video. Resultado esperado: *Voto eliminado*.
+
+5. **Ranking público (no requiere autenticación)**  
+   - Cualquier usuario, sin necesidad de autenticarse, puede consultar la tabla de clasificación. Esta muestra a los jugadores ordenados según la cantidad de votos que recibieron sus videos.  
+   - El sistema puede devolver error **400** si los parámetros de consulta del ranking son inválidos.
+
 
 ---
 
