@@ -4,6 +4,13 @@
 
 Plataforma web completa para la **Asociación Nacional de Baloncesto (ANB)** que permite a los usuarios gestionar y votar por contenido de video. El sistema incluye funcionalidades de autenticación, subida de videos, gestión personal de contenido, votación pública y rankings en tiempo real.
 
+## Integrantes
+
+* Tomas Acosta Bernal - 20201127 - t.acosta@uniandes.edu.co
+* Samuel Romero Yepez - 201518954 - sj.romero10@uniandes.edu.co
+* Alejandro Herrera Jiménez - 201915788 - a.herrera20@uniandes.edu.co
+* Mauricio Ramírez Montilla -202522791 - m.ramirezm23@uniandes.edu.co
+
 ## Arquitectura del Sistema
 
 ```
@@ -291,4 +298,5 @@ Se encuentra en la wiki del repo.
 
 **ANB - Asociación Nacional de Baloncesto v1.0**  
 *Sistema completo de gestión y votación de videos*
+
 
