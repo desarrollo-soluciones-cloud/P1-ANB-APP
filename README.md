@@ -272,13 +272,6 @@ docker exec postgres-anb pg_dump -U anb_user anb_db > backup.sql
 tar -czf videos_backup.tar.gz backend/uploads/
 ```
 
-## Contribución
-
-1. Fork del repositorio
-2. Crear branch para nueva funcionalidad: `git checkout -b feature/nueva-caracteristica`
-3. Realizar cambios y commits descriptivos
-4. Crear Pull Request con descripción detallada
-
 ### Estándares
 - **Backend**: Convenciones de Go, tests unitarios
 - **Frontend**: Angular style guide, ESLint, Prettier
@@ -287,3 +280,4 @@ tar -czf videos_backup.tar.gz backend/uploads/
 
 **ANB - Asociación Nacional de Baloncesto v1.0**  
 *Sistema completo de gestión y votación de videos*
+
