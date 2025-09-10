@@ -45,9 +45,9 @@ services:
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     volumes:
-      - ./backend/uploads:/app/uploads
-      - ./backend/intro:/app/intro
-      - ./backend/logs:/app/logs
+      - uploads-data:/app/uploads
+      - intro-data:/app/intro
+      - logs-data:/app/logs
     env_file:
       - .env
     depends_on:
@@ -64,9 +64,9 @@ services:
       dockerfile: Dockerfile
     command: /worker_server
     volumes:
-      - ./backend/uploads:/app/uploads
-      - ./backend/intro:/app/intro
-      - ./backend/logs:/app/logs
+      - uploads-data:/app/uploads
+      - intro-data:/app/intro
+      - logs-data:/app/logs
     env_file:
       - .env
     depends_on:
@@ -127,6 +127,12 @@ volumes:
   postgres-data:
     driver: local
   redis-data:
+    driver: local
+  uploads-data:
+    driver: local
+  intro-data:
+    driver: local
+  logs-data:
     driver: local
 
 networks:
