@@ -6,8 +6,8 @@ Incluye: endpoints, modelo de datos, diagramas de arquitectura y flujo, guía de
 
 ## 3) Documentación de la API (Postman)
 ### Archivos
-- `ANB_API_Postman_Collection.json` – colección con todos los endpoints.
-- `ANB_API_Local.postman_environment.json` – entorno local (`{{base_url}} = http://localhost:9090`).
+- `ANB API - Colección.postman_collection.json` – colección con todos los endpoints.
+- `ANB API - Local.postman_environment.json` – entorno local (`{{base_url}} = http://localhost:9090`).
 
 ### Base URL
 ```
