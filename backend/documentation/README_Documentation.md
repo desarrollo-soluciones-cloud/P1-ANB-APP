@@ -44,7 +44,7 @@ Esta documentación contiene todos los endpoints de la Implementación de una AP
 2. **ANB API - Local.postman_environment.json** - Entorno de desarrollo local
 
 
- [Ir a la carpeta de collections](../backend/collectios/)
+ [Ir a la carpeta de collections](docs/backend/collectios/)
 
 ---
 
