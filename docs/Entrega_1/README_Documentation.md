@@ -64,7 +64,7 @@ La documentación completa de la API está disponible en la carpeta `collections
 - **ANB_Environment.json** - Ambiente de desarrollo (puerto 9090)
 - **README.md** - Documentación y guía de uso
 
-[Ir a la carpeta de collections](../collections/)
+[Ir a la carpeta de collections](../../collections/)
 
 
 ---
@@ -127,7 +127,7 @@ La documentación completa del proyecto se encuentra en el README principal:
 ### Documentación Específica
 
 - **Backend**: Documentación técnica del API y servicios
-  [Ver documentación del backend](../readme.md)
+  [Ver documentación del backend](../../backend/readme.md)
 
 - **Frontend**: Documentación de la aplicación Angular
   [Ver documentación del frontend](../../frontend/README.md)
