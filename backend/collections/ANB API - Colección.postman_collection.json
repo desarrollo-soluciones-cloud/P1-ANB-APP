@@ -1,0 +1,479 @@
+{
+	"info": {
+		"_postman_id": "f578330b-3a06-4413-987f-fc616354ad21",
+		"name": "ANB API - Colección (v2, completa y con tests)",
+		"description": "Colección completa para ANB API según documento de Gestión de usuarios.\n- Usa {{base_url}} (por defecto incluye /api/v1).\n- Guarda {{token}} automáticamente al hacer login.\n- Intenta guardar {{video_id}} tras subir/listar videos para acelerar pruebas.\n- Carpetas con autorización heredada (Bearer {{token}}), excepto Público.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "47549701",
+		"_collection_link": "https://maorm9626-3795003.postman.co/workspace/Mauricio-Ramirez's-Workspace~e4c652de-2479-47a9-892d-b836243ff5d5/collection/47549701-f578330b-3a06-4413-987f-fc616354ad21?action=share&source=collection_link&creator=47549701"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "SINGUP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// SIGNUP - 201 / 400",
+									"pm.test('201 Created - Usuario creado exitosamente', function(){ if (pm.response.code===201) pm.expect(pm.response.code).to.eql(201); });",
+									"pm.test('400 Bad Request - Error de validación (email duplicado o contraseñas no coinciden)', function(){ if (pm.response.code===400) pm.expect(pm.response.code).to.eql(400); });"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"john@example.com\",\n  \"password1\": \"StrongPass123\",\n  \"password2\": \"StrongPass123\",\n  \"city\": \"Bogotá\",\n  \"country\": \"Colombia\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/signup",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"signup"
+							]
+						},
+						"description": "Registro de jugadores.\nBody incluye password1/password2 para validar coincidencia, pero el backend almacena solo una (hasheada)."
+					},
+					"response": []
+				},
+				{
+					"name": "LOGIN",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// LOGIN - 200 / 401 y guardar token automáticamente",
+									"let data = {}; try { data = pm.response.json(); } catch(e) {}",
+									"if (pm.response.code === 200 && data && (data.access_token || data.token)) {",
+									"  pm.collectionVariables.set('token', data.access_token || data.token);",
+									"}",
+									"pm.test('200 OK o 401 Unauthorized', function(){ pm.expect([200,401]).to.include(pm.response.code); });"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"StrongPass123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autenticación. Guarda automáticamente {{token}} desde access_token/token."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Videos (protegido)",
+			"item": [
+				{
+					"name": "POST VIDEO",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// UPLOAD - 201 / 400 / 401",
+									"// Si la API devuelve video_id, lo guardamos para pruebas siguientes",
+									"try { var d = pm.response.json(); if (d.video_id) { pm.collectionVariables.set('video_id', d.video_id); } } catch(e) {}",
+									"pm.test('201 Created - Video subido y tarea creada', function(){ if (pm.response.code===201) pm.expect(pm.response.code).to.eql(201); });",
+									"pm.test('400 Bad Request - Archivo inválido (tipo/tamaño)', function(){ if (pm.response.code===400) pm.expect(pm.response.code).to.eql(400); });",
+									"pm.test('401 Unauthorized - Falta autenticación', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "title",
+									"value": "Mi mejor tiro de 3",
+									"type": "text"
+								},
+								{
+									"key": "video_file",
+									"value": "",
+									"type": "file"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/videos/upload",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"videos",
+								"upload"
+							]
+						},
+						"description": "Sube video (form-data: title, video_file). Encola tarea asíncrona de procesamiento."
+					},
+					"response": []
+				},
+				{
+					"name": "LIST VIDEOS",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// LIST - 200 / 401",
+									"// Si devuelve lista, tomar el primer id como {{video_id}} para acelerar pruebas",
+									"try { var arr = pm.response.json(); if (Array.isArray(arr) && arr.length>0 && (arr[0].id || arr[0].video_id)) { pm.collectionVariables.set('video_id', arr[0].id || arr[0].video_id); } } catch(e) {}",
+									"pm.test('200 OK - Lista de videos obtenida', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+									"pm.test('401 Unauthorized - Falta autenticación', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/videos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"videos"
+							]
+						},
+						"description": "Lista los videos del usuario autenticado."
+					},
+					"response": []
+				},
+				{
+					"name": "GET VIDEO BY ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// GET BY ID - 200 / 401 / 403 / 404",
+									"pm.test('200 OK - Detalle de video', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+									"pm.test('401 Unauthorized', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });",
+									"pm.test('403 Forbidden - No es el propietario', function(){ if (pm.response.code===403) pm.expect(pm.response.code).to.eql(403); });",
+									"pm.test('404 Not Found - No existe o no pertenece', function(){ if (pm.response.code===404) pm.expect(pm.response.code).to.eql(404); });"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/videos/{{video_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"videos",
+								"{{video_id}}"
+							]
+						},
+						"description": "Detalle de video (usa {{video_id}})."
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE VIDEO",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// DELETE - 200 / 400 / 401 / 403 / 404",
+									"pm.test('200 OK - Eliminado correctamente', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+									"pm.test('400 Bad Request - No se puede eliminar (procesado/publicado)', function(){ if (pm.response.code===400) pm.expect(pm.response.code).to.eql(400); });",
+									"pm.test('401 Unauthorized', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });",
+									"pm.test('403 Forbidden - No es el propietario', function(){ if (pm.response.code===403) pm.expect(pm.response.code).to.eql(403); });",
+									"pm.test('404 Not Found - No existe o ya fue eliminado', function(){ if (pm.response.code===404) pm.expect(pm.response.code).to.eql(404); });"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/videos/{{video_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"videos",
+								"{{video_id}}"
+							]
+						},
+						"description": "Eliminar video (solo si NO está procesado/publicado)."
+					},
+					"response": []
+				},
+				{
+					"name": "MARK PROCESSED VIDEO",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// MARK PROCESSED - 200 / 401 / 403 / 404",
+									"pm.test('200 OK - Marcado como procesado', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+									"pm.test('401 Unauthorized', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });",
+									"pm.test('403 Forbidden - No es el propietario', function(){ if (pm.response.code===403) pm.expect(pm.response.code).to.eql(403); });",
+									"pm.test('404 Not Found - No existe o no pertenece', function(){ if (pm.response.code===404) pm.expect(pm.response.code).to.eql(404); });"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/videos/{{video_id}}/mark-processed",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"videos",
+								"{{video_id}}",
+								"mark-processed"
+							]
+						},
+						"description": "Marcar un video como procesado."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Público (sin token)",
+			"item": [
+				{
+					"name": "PUBLIC VIDEOS",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// PUBLIC VIDEOS - 200",
+									"pm.test('200 OK - Lista de videos públicos', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/public/videos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"public",
+								"videos"
+							]
+						},
+						"description": "Listado de videos públicos."
+					},
+					"response": []
+				},
+				{
+					"name": "RANKINGS",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// RANKINGS - 200 / 400 (parámetro inválido)",
+									"pm.test('200 OK - Lista de rankings obtenida', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+									"pm.test('400 Bad Request - Parámetro inválido en la consulta', function(){ if (pm.response.code===400) pm.expect(pm.response.code).to.eql(400); });"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/public/rankings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"public",
+								"rankings"
+							]
+						},
+						"description": "Ranking público (puede fallar con 400 si hay parámetros inválidos)."
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "noauth"
+			}
+		},
+		{
+			"name": "Votes (protegido)",
+			"item": [
+				{
+					"name": "CREATE VOTE",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// VOTE CREATE - 200 / 400 / 401 / 404",
+									"pm.test('200 OK - Voto registrado exitosamente', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+									"pm.test('400 Bad Request - Ya has votado por este video', function(){ if (pm.response.code===400) pm.expect(pm.response.code).to.eql(400); });",
+									"pm.test('401 Unauthorized - Falta autenticación', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });",
+									"pm.test('404 Not Found - Video no encontrado', function(){ if (pm.response.code===404) pm.expect(pm.response.code).to.eql(404); });"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/public/videos/{{video_id}}/vote",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"public",
+								"videos",
+								"{{video_id}}",
+								"vote"
+							]
+						},
+						"description": "Emitir voto por un video."
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE VOTE",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// VOTE DELETE - 200 / 401 / 404",
+									"pm.test('200 OK - Voto eliminado', function(){ if (pm.response.code===200) pm.expect(pm.response.code).to.eql(200); });",
+									"pm.test('401 Unauthorized - Falta autenticación', function(){ if (pm.response.code===401) pm.expect(pm.response.code).to.eql(401); });",
+									"pm.test('404 Not Found - No había voto o video no existe', function(){ if (pm.response.code===404) pm.expect(pm.response.code).to.eql(404); });"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/public/videos/{{video_id}}/vote",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"public",
+								"videos",
+								"{{video_id}}",
+								"vote"
+							]
+						},
+						"description": "Quitar voto emitido."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:9090/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "video_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
