@@ -32,7 +32,14 @@ El modelo de datos de la aplicación se representa mediante un **Diagrama Entida
 
 ## 2. Documentación de la API
 
-*(pendiente de completar: descripción de endpoints, colección Postman, ejemplos de request/response, pruebas ejecutadas)*
+## Descripción
+
+Esta documentación contiene todos los endpoints de la API REST para la aplicación Todo App, incluyendo pruebas automatizadas y casos de uso completos.
+
+## Archivos Generados
+
+1. **ANB API - Colección.postman_collection.json** - Colección principal con todos los endpoints
+2. **ANB API - Local.postman_environment.json** - Entorno de desarrollo local
 
 ---
 
