@@ -344,21 +344,40 @@ WORKER_CONCURRENCY=10
 
 ## Testing
 
+## Ejecutar Tests
+
+### **Localmente**
 ```bash
-# Ejecutar todos los tests
-go test ./...
+# Todos los tests
+cd backend && go test ./... -v
 
-# Tests con cobertura
-go test -cover ./...
+# Con cobertura
+cd backend && go test ./... -cover
 
-# Tests de un módulo específico
-go test ./src/video -v
+# Módulo específico
+cd backend && go test ./src/user -v
+```
 
-### Estructura de Tests
+### **Con Docker**
+```bash
+# Desde la raíz del proyecto
+docker-compose --profile test up --build test
 
-- **Unit Tests**: `*_test.go` para cada componente  
-- **Integration Tests**: Tests de base de datos y API
-- **Mocks**: Para servicios externos y dependencias
+# Limpiar
+docker-compose --profile test down
+```
+
+## Docker Testing
+
+El proyecto incluye `Dockerfile.test` con Go 1.24 para ejecutar tests en contenedor aislado con dependencias (PostgreSQL, Redis) reales.
+
+## Cobertura
+
+- Auth Service & Middleware
+- User Service & Controller  
+- Video Service & Controller
+- Vote Service & Controller
+- Casos: validaciones, permisos, errores, HTTP endpoints
 
 ## Base de Datos
 
