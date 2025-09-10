@@ -9,7 +9,7 @@ Este documento centraliza toda la información técnica requerida para la entreg
 El modelo de datos de la aplicación se representa mediante un **Diagrama Entidad-Relación (ERD)**, el cual describe las entidades principales, sus atributos y las relaciones entre ellas.
 
 ### Diagrama Entidad-Relación
-![ERD](./diagrama Entidad–Relación (ERD).png)
+![ERD]("./diagrama Entidad–Relación (ERD).png")
 
 ### Descripción de entidades y relaciones
 - **Users**  
