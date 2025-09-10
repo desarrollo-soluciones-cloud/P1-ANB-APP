@@ -45,13 +45,13 @@ El modelo de datos de la aplicación se representa mediante un **Diagrama Entida
 ## 4. Diagrama de Flujo de Procesos
 
 
-## 📈 Diagrama de flujo de procesos
+## Diagrama de flujo de procesos
 
 El siguiente diagrama representa el flujo completo de interacción dentro de la API. Resume cómo los usuarios y el público general pueden usar el sistema, desde el **registro de jugadores** hasta la **participación en votaciones** y la **consulta de rankings**.
 
 ![Diagrama de flujo del proceso](Diagrama%20de%20flujo%20de%20proceso%20API%20RESK.png)
 
-### 🔹 Explicación del flujo
+###  Explicación del flujo
 
 1. **Inicio del proceso**  
    El usuario puede optar por registrarse en la plataforma para participar activamente o, si no desea autenticarse, puede consultar directamente el ranking público de jugadores.
