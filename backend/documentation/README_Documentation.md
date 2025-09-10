@@ -1,6 +1,26 @@
-# Documentación del Proyecto
+# Documentación Técnica - P1-ANB-APP
 
-Este documento centraliza toda la información técnica requerida para la entrega del proyecto, incluyendo el modelo de datos, la documentación de la API, los diagramas arquitectónicos, los procesos de despliegue y los resultados de calidad de código.
+## Descripción del Proyecto
+
+**P1-ANB-APP** es una aplicación web para la Academia Nacional de Baloncesto que permite a los jugadores aficionados subir videos de sus habilidades, participar en un sistema de votación y consultar rankings de popularidad.
+
+### Características Principales
+
+- **Gestión de usuarios**: Registro y autenticación con JWT
+- **Subida de videos**: Carga y procesamiento asíncrono de archivos MP4
+- **Sistema de votación**: Un voto por usuario por video con rankings dinámicos
+- **Arquitectura escalable**: Microservicios containerizados con Docker
+- **API REST completa**: Documentada con Postman y tests automatizados
+
+### Tecnologías Utilizadas
+
+- **Backend**: Go (Gin framework), PostgreSQL, Redis, Asynq
+- **Frontend**: Angular con SSR, Nginx
+- **Infraestructura**: Docker, Docker Compose
+- **Testing**: Postman + Newman CLI, Go testing
+- **Calidad**: SonarQube para análisis estático
+
+Este documento centraliza toda la información técnica del proyecto, incluyendo el modelo de datos, documentación de la API, diagramas arquitectónicos, procesos de despliegue y resultados de análisis de calidad de código.
 
 ---
 
@@ -34,17 +54,17 @@ El modelo de datos de la aplicación se representa mediante un **Diagrama Entida
 
 ## 2. Documentación de la API
 
-## Descripción
+La API REST implementa endpoints para registro de usuarios, gestión de videos y sistema de votación.
 
-Esta documentación contiene todos los endpoints de la Implementación de una API REST escalable con orquestación de tareas asíncronas para el procesamiento de archivos.
+### Archivos de Postman
 
-## Archivos Generados
+La documentación completa de la API está disponible en la carpeta `collections/`:
 
-1. **ANB API - Colección.postman_collection.json** - Colección principal con todos los endpoints
-2. **ANB API - Local.postman_environment.json** - Entorno de desarrollo local
+- **ANB_Collection.json** - Colección con todos los endpoints
+- **ANB_Environment.json** - Ambiente de desarrollo (puerto 9090)
+- **README.md** - Documentación y guía de uso
 
-
- [Ir a la carpeta de collections](../collections/)
+[Ir a la carpeta de collections](../../collections/)
 
 
 ---
@@ -98,7 +118,19 @@ El siguiente diagrama representa el flujo completo de interacción dentro de la 
 
 ## 5. Despliegue y Documentación
 
-*(pendiente de completar: infraestructura, contenedores Docker, servicios activos, guía de réplica del entorno)*
+### Documentación General del Proyecto
+
+La documentación completa del proyecto se encuentra en el README principal:
+
+[Ver README principal del proyecto](../../README.md)
+
+### Documentación Específica
+
+- **Backend**: Documentación técnica del API y servicios
+  [Ver documentación del backend](../readme.md)
+
+- **Frontend**: Documentación de la aplicación Angular
+  [Ver documentación del frontend](../../frontend/README.md)
 
 ---
 
