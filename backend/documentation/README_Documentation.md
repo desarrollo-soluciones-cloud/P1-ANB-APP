@@ -91,8 +91,6 @@ El siguiente diagrama representa el flujo completo de interacción dentro de la 
 
 ## 6. Reporte de Análisis de SonarQube
 
-## Reporte de Análisis SonarQube – Rama *dev* (P1-ANB-APP)
-
 El siguiente reporte corresponde al análisis realizado con **SonarQube Community** sobre la rama `dev` del proyecto **P1-ANB-APP**.  
 
 El resultado global indica que el proyecto **pasa el Quality Gate**, aunque con advertencias importantes que deben atenderse.
