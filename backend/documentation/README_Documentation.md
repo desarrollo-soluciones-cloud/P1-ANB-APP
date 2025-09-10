@@ -43,8 +43,6 @@ Esta documentación contiene todos los endpoints de la Implementación de una AP
 1. **ANB API - Colección.postman_collection.json** - Colección principal con todos los endpoints
 2. **ANB API - Local.postman_environment.json** - Entorno de desarrollo local
 
-[Documentación de la API](backend/collections)
-
 ---
 
 ## 3. Diagrama de Componentes
