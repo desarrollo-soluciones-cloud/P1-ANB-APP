@@ -11,6 +11,9 @@ Plataforma web completa para la **Asociación Nacional de Baloncesto (ANB)** que
 * Alejandro Herrera Jiménez - 201915788 - a.herrera20@uniandes.edu.co
 * Mauricio Ramírez Montilla -202522791 - m.ramirezm23@uniandes.edu.co
 
+## Link Video
+https://drive.google.com/file/d/1jyZLgtK4Ha-CYfT9oR9ODp-jG0nPtS9B/view?usp=drive_link
+
 ## Arquitectura del Sistema
 
 ```
@@ -291,5 +294,6 @@ Se encuentra en la wiki del repo.
 
 **ANB - Asociación Nacional de Baloncesto v1.0**  
 *Sistema completo de gestión y votación de videos*
+
 
 
