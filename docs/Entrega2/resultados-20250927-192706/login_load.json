@@ -1,0 +1,18 @@
+{
+  "target": "http://44.198.15.64:9090/api/v1/auth/login",
+  "method": "POST",
+  "duration": 30000000000,
+  "planned_rate_rps": 10,
+  "planned_concurrency": 10,
+  "total_requests": 299,
+  "success_requests": 299,
+  "error_requests": 0,
+  "success_rate": 100,
+  "throughput_rps": 9.966666666666667,
+  "latency_mean_ms": 83.15504682274248,
+  "p50_ms": 80.844,
+  "p90_ms": 90.49,
+  "p95_ms": 98.33799999999995,
+  "p99_ms": 111.2663799999999,
+  "latency_max_ms": 183.903
+}
