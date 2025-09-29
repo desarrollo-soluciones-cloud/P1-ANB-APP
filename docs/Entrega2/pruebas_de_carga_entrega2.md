@@ -1,4 +1,4 @@
-# Análisis de capacidad – ANB API (AWS **solo 44.198.15.64:9090**)
+# Análisis de capacidad – ANB API 
 
   
 **Ámbito:** Backend ANB API (auth, videos públicos/privados, rankings, votos).  
