@@ -63,7 +63,6 @@
 **Infraestructura:**  
 - **Auto Scaling** por p95/CPU/5xx; mínimo **2 réplicas** detrás de **ALB** para HA.  
 - **CDN** para respuestas públicas calientes (rankings/listados).  
-- Servir descargas desde **S3 + pre-signed URL** si el payload crece.
 
 
 ---
