@@ -22,7 +22,7 @@
 ## 2) Escenarios y metodología
 **Escenario 1 (moderado):** 30 rps, 2 min, conc. 20.  
 **Escenario 2 (estrés):** 120 rps público / 100 rps privado, 3 min, conc. 60.  
-**Herramientas:** `loadtest.go` (Go) con `run_local.ps1 -RunEsc2` (solo como orquestador, apuntando a AWS).  
+**Herramientas:** `loadtest.go` (Go) con `runner.go -RunEsc2` (solo como orquestador, apuntando a AWS).  
 **Métrica de éxito:** status < 500 y sin fallo de transporte.  
 **Métricas recolectadas:** throughput, % éxito, latencias (mean/p50/**p95**/p99/max).
 
