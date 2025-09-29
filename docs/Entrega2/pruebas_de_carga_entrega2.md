@@ -16,8 +16,6 @@
   - **/public/rankings** presentó **89.57% de éxito** (125/1198 errores) y **p95≈171 ms** ⇒ investigar.  
   - **Endpoints por id** (`/videos/:id`, `download`, `mark-processed`, votos **POST/DELETE**) estables al ritmo ligero (5–20 rps).  
  
-  
-**Conclusión:** En AWS, la API **sostiene** hasta **120 rps** (público) y **100 rps** (privado) en lectura con **p95≈100 ms y 0% errores**. Se recomienda **ramp-up** (150–200 rps) y análisis dirigido de **/public/rankings**.
 
 ---
 
