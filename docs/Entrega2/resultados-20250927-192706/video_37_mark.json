@@ -1,0 +1,18 @@
+{
+  "target": "http://44.198.15.64:9090/api/v1/videos/37/mark-processed",
+  "method": "POST",
+  "duration": 30000000000,
+  "planned_rate_rps": 5,
+  "planned_concurrency": 5,
+  "total_requests": 149,
+  "success_requests": 149,
+  "error_requests": 0,
+  "success_rate": 100,
+  "throughput_rps": 4.966666666666667,
+  "latency_mean_ms": 90.13985906040271,
+  "p50_ms": 84.453,
+  "p90_ms": 115.37140000000001,
+  "p95_ms": 121.0552,
+  "p99_ms": 148.77884000000012,
+  "latency_max_ms": 185.436
+}

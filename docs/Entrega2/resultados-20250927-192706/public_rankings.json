@@ -1,0 +1,18 @@
+{
+  "target": "http://44.198.15.64:9090/api/v1/public/rankings",
+  "method": "GET",
+  "duration": 60000000000,
+  "planned_rate_rps": 20,
+  "planned_concurrency": 10,
+  "total_requests": 1198,
+  "success_requests": 1073,
+  "error_requests": 125,
+  "success_rate": 89.56594323873122,
+  "throughput_rps": 19.966666666666665,
+  "latency_mean_ms": 92.24270784641067,
+  "p50_ms": 82.25399999999999,
+  "p90_ms": 133.90859999999998,
+  "p95_ms": 171.38804999999988,
+  "p99_ms": 194.63913,
+  "latency_max_ms": 206.199
+}
