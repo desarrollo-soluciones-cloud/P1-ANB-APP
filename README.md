@@ -11,8 +11,12 @@ Plataforma web completa para la **Asociación Nacional de Baloncesto (ANB)** que
 * Alejandro Herrera Jiménez - 201915788 - a.herrera20@uniandes.edu.co
 * Mauricio Ramírez Montilla -202522791 - m.ramirezm23@uniandes.edu.co
 
-## Link Video
+## Link Video 
 https://drive.google.com/file/d/1jyZLgtK4Ha-CYfT9oR9ODp-jG0nPtS9B/view?usp=drive_link
+
+## Link Video Entrega 2
+
+https://drive.google.com/drive/folders/1KWCLaTHANyOGnqqDDBSkBzEqoW-9WYe6?usp=sharing
 
 ## Arquitectura del Sistema
 
