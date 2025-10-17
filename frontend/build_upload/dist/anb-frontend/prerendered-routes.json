@@ -1,0 +1,14 @@
+{
+  "routes": [
+    "/auth",
+    "/auth/login",
+    "/auth/register",
+    "/dashboard",
+    "/dashboard/public/videos",
+    "/dashboard/rankings",
+    "/dashboard/videos",
+    "/dashboard/videos/upload",
+    "/public",
+    "/public/videos"
+  ]
+}

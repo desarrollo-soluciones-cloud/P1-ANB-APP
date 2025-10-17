@@ -1,8 +1,7 @@
 package main
 
 import (
-	"anb-app/src/database" // Usar PostgreSQL como el API
-	"anb-app/src/video"    // Importamos el paquete de video
+	"anb-app/src/video" // Importamos el paquete de video
 	"bytes"
 	"context"
 	"encoding/json"
@@ -15,8 +14,9 @@ import (
 	"time"
 
 	"github.com/hibiken/asynq"
-	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type TaskProcessor struct {
@@ -26,6 +26,49 @@ type TaskProcessor struct {
 
 func NewTaskProcessor(db *gorm.DB, videoRepo video.VideoRepository) *TaskProcessor {
 	return &TaskProcessor{db: db, videoRepo: videoRepo}
+}
+
+// Función de conexión directa a PostgreSQL hardcodeada
+func connectPostgreSQL() *gorm.DB {
+	// Configuración hardcodeada directa
+	dbHost := "anb-app-db.cd6qswmk4njt.us-east-1.rds.amazonaws.com"
+	dbPort := "5432"
+	dbUser := "anb_user"
+	dbPassword := "anb_password"
+	dbName := "anb_db"
+	dbSSLMode := "require"
+
+	// Crear DSN de conexión
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=UTC",
+		dbHost, dbUser, dbPassword, dbName, dbPort, dbSSLMode)
+
+	log.Printf("Conectando a RDS: %s:%s/%s con SSL", dbHost, dbPort, dbName)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+
+	if err != nil {
+		log.Fatalf("Error fatal al conectar a la base de datos: %v", err)
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Error al obtener la instancia SQL DB: %v", err)
+	}
+
+	// Configurar el pool de conexiones
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
+	// Verificar la conexión
+	if err = sqlDB.Ping(); err != nil {
+		log.Fatalf("Error al hacer ping a la base de datos: %v", err)
+	}
+
+	log.Println("Conexión a la base de datos establecida exitosamente.")
+	return db
 }
 
 func (p *TaskProcessor) processVideo(videoRecord *video.Video) error {
@@ -127,16 +170,14 @@ func runFFmpegCommand(cmd *exec.Cmd) error {
 }
 
 func main() {
-	err := godotenv.Load("../.env")
-	if err != nil {
-		log.Println("Advertencia: No se pudo cargar .env, usando valores por defecto")
-	}
-
 	log.Println("Conectando worker a PostgreSQL...")
-	db := database.ConnectDB()
+
+	// Conexión directa hardcodeada a PostgreSQL
+	db := connectPostgreSQL()
 	log.Println("Worker conectado a PostgreSQL exitosamente")
 
-	redisAddr := os.Getenv("REDIS_ADDR")
+	// Redis hardcodeado para Docker
+	redisAddr := "redis-anb:6379"
 
 	log.Printf("Configurando Asynq con Redis en: %s", redisAddr)
 	srv := asynq.NewServer(
