@@ -45,11 +45,13 @@ export class VideoDetailComponent implements OnInit {
     const url = type === 'processed' ? video.processed_url : video.original_url;
     if (!url) return null;
     
-    // Asegurar que use el puerto correcto del API (9090)
-    const apiBase = 'http://localhost:9090';
-    if (url.startsWith('http')) return url;
+    // URLs de S3 o completas se devuelven directamente
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
     
-    // Para rutas que empiezan con /uploads, usar directamente el API
+    // Backward compatibility: Para rutas locales /uploads
+    const apiBase = environment.apiUrl || 'http://localhost:9090';
     if (url.startsWith('/uploads') || url.startsWith('uploads')) {
       const cleanPath = url.startsWith('/') ? url : '/' + url;
       return `${apiBase}${cleanPath}`;

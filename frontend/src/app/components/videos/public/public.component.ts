@@ -102,22 +102,30 @@ export class PublicVideosComponent implements OnInit {
 
   normalizeUrl(url: string) {
     if (!url) return null;
+    // URLs completas de S3 o cualquier URL externa
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    // Para uploads, usar ruta relativa (manejada por nginx proxy)
+    // Para uploads locales (backward compatibility)
     if (url.startsWith('uploads/')) {
       return `/${url}`;
     }
     // Para otras rutas, usar apiUrl
     const base = environment.apiUrl?.replace(/\/$/, '');
     return base ? `${base}${url.startsWith('/') ? '' : '/'}${url}` : url;
-  }  getVideoUrl(video: any): string | null {
+  }
+
+  getVideoUrl(video: any): string | null {
     const url = video.processed_url || video.processedUrl;
     if (!url) return null;
     
-    // Usar ruta relativa para evitar CORS (manejada por nginx proxy)
+    // URLs de S3 o completas se devuelven directamente
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    // Backward compatibility: rutas locales /uploads
     if (url.startsWith('/uploads') || url.startsWith('uploads')) {
       const cleanPath = url.startsWith('/') ? url : '/' + url;
-      return cleanPath; // Ruta relativa que nginx proxy manejará
+      return cleanPath;
     }
     
     return this.normalizeUrl(url);
