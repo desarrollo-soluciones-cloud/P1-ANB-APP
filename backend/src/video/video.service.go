@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"mime/multipart"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -54,40 +53,51 @@ func NewVideoService(videoRepo VideoRepository, asynqClient *asynq.Client, redis
 	}
 }
 
+// Helper to convert S3 key to presigned URL
+func (s *videoService) getPresignedURL(s3Key string) string {
+	if s3Key == "" {
+		return ""
+	}
+	// Generate presigned URL valid for 1 hour
+	url, err := s.storageSvc.GetPresignedURL(s3Key, 1*time.Hour)
+	if err != nil {
+		log.Printf("Error generating presigned URL for %s: %v", s3Key, err)
+		return ""
+	}
+	return url
+}
+
 func (s *videoService) Upload(ctx *gin.Context, req *UploadVideoRequest, fileHeader *multipart.FileHeader, userID uint) (*VideoResponse, error) {
 	ext := filepath.Ext(fileHeader.Filename)
 	newFileName := fmt.Sprintf("%d-%d%s", time.Now().UnixNano(), userID, ext)
 
-	uploadPath := "./uploads/originals"
-	if err := os.MkdirAll(uploadPath, os.ModePerm); err != nil {
-		return nil, err
-	}
-	filePath := filepath.Join(uploadPath, newFileName)
+	// S3 key (path in bucket)
+	s3Key := fmt.Sprintf("originals/%s", newFileName)
 
 	file, err := fileHeader.Open()
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close() // Muy importante cerrar el archivo al final.
+	defer file.Close()
 
-	// 2. Delegamos la tarea de guardado al StorageService.
-	// ¡Ya no usamos ctx.SaveUploadedFile aquí!
-	if err := s.storageSvc.Upload(file, filePath); err != nil {
+	// Upload to S3
+	if err := s.storageSvc.Upload(file, s3Key); err != nil {
 		return nil, err
 	}
 
-	publicOriginalPath := fmt.Sprintf("/uploads/originals/%s", newFileName)
+	// Store S3 key in database
 	newVideo := &Video{
 		UserID:      userID,
 		Title:       req.Title,
 		Status:      "uploaded",
-		OriginalURL: publicOriginalPath,
+		OriginalURL: s3Key, // Store S3 key
 		UploadedAt:  time.Now(),
 	}
 
 	createdVideo, err := s.videoRepo.Create(newVideo)
 	if err != nil {
-		os.Remove(filePath)
+		// Try to cleanup S3 object if DB insert fails
+		s.storageSvc.Delete(s3Key)
 		return nil, err
 	}
 
@@ -110,16 +120,20 @@ func (s *videoService) Upload(ctx *gin.Context, req *UploadVideoRequest, fileHea
 	}
 	log.Printf("---> Enqueued task to process video ID: %d, Task ID: %s", createdVideo.ID, taskInfo.ID)
 
+	// Generate presigned URLs for response
+	originalPresignedURL := s.getPresignedURL(createdVideo.OriginalURL)
+	processedPresignedURL := s.getPresignedURL(createdVideo.ProcessedURL)
+
 	response := &VideoResponse{
 		ID:           createdVideo.ID,
 		UserID:       createdVideo.UserID,
 		Title:        createdVideo.Title,
 		Status:       createdVideo.Status,
-		OriginalURL:  createdVideo.OriginalURL,
+		OriginalURL:  originalPresignedURL,
 		VoteCount:    createdVideo.VoteCount,
 		UploadedAt:   createdVideo.UploadedAt,
 		ProcessedAt:  createdVideo.ProcessedAt,
-		ProcessedURL: createdVideo.ProcessedURL,
+		ProcessedURL: processedPresignedURL,
 	}
 
 	return response, nil
@@ -138,8 +152,8 @@ func (s *videoService) ListByUserID(userID uint) ([]VideoResponse, error) {
 			UserID:       video.UserID,
 			Title:        video.Title,
 			Status:       video.Status,
-			OriginalURL:  video.OriginalURL,
-			ProcessedURL: video.ProcessedURL,
+			OriginalURL:  s.getPresignedURL(video.OriginalURL),
+			ProcessedURL: s.getPresignedURL(video.ProcessedURL),
 			VoteCount:    video.VoteCount,
 			UploadedAt:   video.UploadedAt,
 			ProcessedAt:  video.ProcessedAt,
@@ -168,8 +182,8 @@ func (s *videoService) GetByID(videoID uint, userID uint) (*VideoResponse, error
 		UserID:       video.UserID,
 		Title:        video.Title,
 		Status:       video.Status,
-		OriginalURL:  video.OriginalURL,
-		ProcessedURL: video.ProcessedURL,
+		OriginalURL:  s.getPresignedURL(video.OriginalURL),
+		ProcessedURL: s.getPresignedURL(video.ProcessedURL),
 		VoteCount:    video.VoteCount,
 		UploadedAt:   video.UploadedAt,
 		ProcessedAt:  video.ProcessedAt,
@@ -200,9 +214,17 @@ func (s *videoService) Delete(videoID uint, userID uint) error {
 		return err
 	}
 
-	// video.OriginalURL is a public path like /uploads/originals/xyz.mp4 -> convert to filesystem path
-	fsPath := strings.TrimPrefix(video.OriginalURL, "/")
-	_ = os.Remove(fsPath)
+	// Delete from S3 (video.OriginalURL is now S3 key)
+	if err := s.storageSvc.Delete(video.OriginalURL); err != nil {
+		log.Printf("Warning: Failed to delete S3 object %s: %v", video.OriginalURL, err)
+	}
+
+	// Also delete processed video if exists
+	if video.ProcessedURL != "" {
+		if err := s.storageSvc.Delete(video.ProcessedURL); err != nil {
+			log.Printf("Warning: Failed to delete S3 object %s: %v", video.ProcessedURL, err)
+		}
+	}
 
 	return nil
 }
@@ -220,8 +242,8 @@ func (s *videoService) ListPublic() ([]VideoResponse, error) {
 			UserID:       video.UserID,
 			Title:        video.Title,
 			Status:       video.Status,
-			OriginalURL:  video.OriginalURL,
-			ProcessedURL: video.ProcessedURL,
+			OriginalURL:  s.getPresignedURL(video.OriginalURL),
+			ProcessedURL: s.getPresignedURL(video.ProcessedURL),
 			VoteCount:    video.VoteCount,
 			UploadedAt:   video.UploadedAt,
 			ProcessedAt:  video.ProcessedAt,
@@ -249,8 +271,8 @@ func (s *videoService) MarkAsProcessed(videoID uint, userID uint) (*VideoRespons
 	now := time.Now()
 	video.ProcessedAt = &now
 	baseName := strings.TrimSuffix(filepath.Base(video.OriginalURL), filepath.Ext(video.OriginalURL))
-	// Store processed public path
-	video.ProcessedURL = fmt.Sprintf("/uploads/processed/%s.mp4", baseName)
+	// Store S3 key for processed video
+	video.ProcessedURL = fmt.Sprintf("processed/%s.mp4", baseName)
 
 	if err := s.videoRepo.Update(video); err != nil {
 		return nil, err
@@ -261,8 +283,8 @@ func (s *videoService) MarkAsProcessed(videoID uint, userID uint) (*VideoRespons
 		UserID:       video.UserID,
 		Title:        video.Title,
 		Status:       video.Status,
-		OriginalURL:  video.OriginalURL,
-		ProcessedURL: video.ProcessedURL,
+		OriginalURL:  s.getPresignedURL(video.OriginalURL),
+		ProcessedURL: s.getPresignedURL(video.ProcessedURL),
 		VoteCount:    video.VoteCount,
 		UploadedAt:   video.UploadedAt,
 		ProcessedAt:  video.ProcessedAt,
