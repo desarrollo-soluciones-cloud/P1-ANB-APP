@@ -1,7 +1,7 @@
 FROM nginx:alpine
 
-# Copiar configuración de nginx
-COPY default.conf /etc/nginx/conf.d/default.conf
+# Copiar template de configuración de nginx
+COPY default.conf.template /etc/nginx/templates/default.conf.template
 
 # Copiar archivos del build del frontend
 COPY dist/anb-frontend/browser /usr/share/nginx/html
@@ -9,5 +9,5 @@ COPY dist/anb-frontend/browser /usr/share/nginx/html
 # Exponer puerto 80
 EXPOSE 80
 
-# Comando para iniciar nginx
+# Nginx automáticamente procesa archivos .template y sustituye variables de entorno
 CMD ["nginx", "-g", "daemon off;"]

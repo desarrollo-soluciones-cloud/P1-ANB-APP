@@ -39,15 +39,33 @@ func NewTaskProcessor(db *gorm.DB, videoRepo video.VideoRepository, s3Client *s3
 	}
 }
 
-// Función de conexión directa a PostgreSQL hardcodeada
+// Función de conexión directa a PostgreSQL usando variables de entorno
 func connectPostgreSQL() *gorm.DB {
-	// Configuración hardcodeada directa
-	dbHost := "anb-app-db.cd6qswmk4njt.us-east-1.rds.amazonaws.com"
-	dbPort := "5432"
-	dbUser := "anb_user"
-	dbPassword := "anb_password"
-	dbName := "anb_db"
-	dbSSLMode := "require"
+	// Leer variables de entorno
+	dbHost := os.Getenv("DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+	dbPort := os.Getenv("DB_PORT")
+	if dbPort == "" {
+		dbPort = "5432"
+	}
+	dbUser := os.Getenv("DB_USER")
+	if dbUser == "" {
+		dbUser = "postgres"
+	}
+	dbPassword := os.Getenv("DB_PASSWORD")
+	if dbPassword == "" {
+		dbPassword = "postgres"
+	}
+	dbName := os.Getenv("DB_NAME")
+	if dbName == "" {
+		dbName = "anb_db"
+	}
+	dbSSLMode := os.Getenv("DB_SSLMODE")
+	if dbSSLMode == "" {
+		dbSSLMode = "disable"
+	}
 
 	// Crear DSN de conexión
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=UTC",
@@ -266,8 +284,11 @@ func main() {
 	s3Client := s3.NewFromConfig(cfg)
 	log.Printf("S3 Client initialized: bucket=%s, region=%s", s3Bucket, awsRegion)
 
-	// Redis hardcodeado para Docker
-	redisAddr := "redis-anb:6379"
+	// Redis desde variables de entorno
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "redis:6379"
+	}
 
 	log.Printf("Configurando Asynq con Redis en: %s", redisAddr)
 	srv := asynq.NewServer(
