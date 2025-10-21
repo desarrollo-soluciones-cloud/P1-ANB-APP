@@ -1,4 +1,4 @@
-# Análisis de capacidad – ANB API (AWS, última corrida)
+# Análisis de capacidad – ANB API (AWS)
 
 **Ámbito:** Backend ANB API (auth, listados públicos/privados de videos, operaciones por-id, votos).  
 **Ambiente:** `http://anb-app-backend-alb-1587560747.us-east-1.elb.amazonaws.com:9090/api/v1`  
