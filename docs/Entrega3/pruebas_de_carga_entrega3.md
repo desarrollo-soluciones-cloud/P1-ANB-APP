@@ -6,7 +6,7 @@
 
 ---
 
-## 1) Resumen ejecutivo
+## 1) Introducción
 - Se ejecutaron **2 escenarios** de lectura (moderado y estrés) más **operaciones por-id** con un video real subido desde disco.
 - **Estabilidad:** 0% de errores en todos los endpoints medidos (éxito = 100%).  
 - **Capacidad de lectura:**
@@ -19,8 +19,8 @@
 
 ## 2) Escenarios y metodología
 **Herramientas:**
-- `loadtest.go` → genera carga contra 1 endpoint (rps, concurrencia, duración).
-- `runner.go` → orquesta la **secuencia completa** (login, escenarios, upload real, pruebas por-id).
+- `loadtest.go` → generador
+- `runner.go` → orquestador
 
 **Escenario 1 (moderado):**
 - Público: **75 rps**, concurrencia **50**, **4 min**.  
