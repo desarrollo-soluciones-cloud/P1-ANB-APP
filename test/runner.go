@@ -124,7 +124,7 @@ func uploadVideo(ctx context.Context, apiBase, token, videoPath, title string) (
 	return "", body, fmt.Errorf("no se encontró id/video_id en la respuesta")
 }
 
-// Opción 2: Polling por título hasta que aparezca en GET /videos
+// Polling por título hasta que aparezca en GET /videos
 func waitVideoIDByTitle(ctx context.Context, apiBase, token, upTitle string, timeout time.Duration) (string, error) {
 	deadline := time.Now().Add(timeout)
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -213,7 +213,7 @@ func getAnyVideoID(ctx context.Context, apiBase, token string) (string, error) {
 
 func main() {
 	// Flags
-	apiBase := flag.String("api_base", "http://44.198.15.64:9090/api/v1", "Base de la API")
+	apiBase := flag.String("api_base", "http://anb-app-backend-alb-1587560747.us-east-1.elb.amazonaws.com:9090/api/v1", "Base de la API")
 	email := flag.String("email", "carlos@anb.com", "Email para login")
 	password := flag.String("password", "password", "Password para login")
 	videoPath := flag.String("video_path", "", "Ruta a un archivo de video existente (requerido)")
@@ -275,15 +275,15 @@ func main() {
 		return a
 	}
 
-	// === [Ligero] POST /auth/login ===
+	// === [Ligero] POST /auth/login (INTENSIFICADO) ===
 	err = goRunLoadtest(*loadtestPath, withCommon(
 		"-url", *apiBase+"/auth/login",
 		"-method", "POST",
 		"-headers", headersJSONPath,
 		"-body", loginBodyPath,
-		"-concurrency", "10",
-		"-rate", "10",
-		"-duration", "30s",
+		"-concurrency", "25", // ↑ antes 20
+		"-rate", "25", // ↑ antes 20
+		"-duration", "60s", // ↑ antes 50s
 		"-out_json", filepath.Join(outDir, "login_load.json"),
 		"-out_csv", filepath.Join(outDir, "login_load.csv"),
 	), "AUTH login (ligero)")
@@ -291,14 +291,14 @@ func main() {
 		fmt.Println("WARN:", err)
 	}
 
-	// === Escenario 1 ===
-	// GET /public/videos
+	// === Escenario 1 (INTENSIFICADO) ===
+	// PUBLIC /public/videos
 	err = goRunLoadtest(*loadtestPath, withCommon(
 		"-url", *apiBase+"/public/videos",
 		"-method", "GET",
-		"-concurrency", "20",
-		"-rate", "30",
-		"-duration", "2m",
+		"-concurrency", "50", // ↑ antes 30
+		"-rate", "75", // ↑ antes 40
+		"-duration", "4m", // ↑ antes 3m
 		"-out_json", filepath.Join(outDir, "public_videos_esc1.json"),
 		"-out_csv", filepath.Join(outDir, "public_videos_esc1.csv"),
 	), "PUBLIC /public/videos esc1")
@@ -306,14 +306,14 @@ func main() {
 		fmt.Println("WARN:", err)
 	}
 
-	// GET /videos (privado)
+	// PRIVATE /videos (privado)
 	err = goRunLoadtest(*loadtestPath, withCommon(
 		"-url", *apiBase+"/videos",
 		"-method", "GET",
 		"-headers", headersAuthPath,
-		"-concurrency", "20",
-		"-rate", "30",
-		"-duration", "2m",
+		"-concurrency", "50", // ↑ antes 40
+		"-rate", "75", // ↑ antes 60
+		"-duration", "4m", // ↑ antes 3m
 		"-out_json", filepath.Join(outDir, "videos_esc1.json"),
 		"-out_csv", filepath.Join(outDir, "videos_esc1.csv"),
 	), "PRIVATE /videos esc1")
@@ -321,15 +321,15 @@ func main() {
 		fmt.Println("WARN:", err)
 	}
 
-	// === Escenario 2 ===
+	// === Escenario 2 (INTENSIFICADO) ===
 	if *runEsc2 {
-		// GET /public/videos @120 rps
+		// PUBLIC /public/videos (alto)
 		err = goRunLoadtest(*loadtestPath, withCommon(
 			"-url", *apiBase+"/public/videos",
 			"-method", "GET",
-			"-concurrency", "60",
-			"-rate", "120",
-			"-duration", "3m",
+			"-concurrency", "100", // ↑ antes 60
+			"-rate", "200", // ↑ antes 120
+			"-duration", "5m", // ↑ antes 3m
 			"-out_json", filepath.Join(outDir, "public_videos_esc2.json"),
 			"-out_csv", filepath.Join(outDir, "public_videos_esc2.csv"),
 		), "PUBLIC /public/videos esc2")
@@ -337,14 +337,14 @@ func main() {
 			fmt.Println("WARN:", err)
 		}
 
-		// GET /videos @100 rps
+		// PRIVATE /videos (alto)
 		err = goRunLoadtest(*loadtestPath, withCommon(
 			"-url", *apiBase+"/videos",
 			"-method", "GET",
 			"-headers", headersAuthPath,
-			"-concurrency", "60",
-			"-rate", "100",
-			"-duration", "3m",
+			"-concurrency", "85", // ↑ antes 60
+			"-rate", "170", // ↑ antes 100
+			"-duration", "5m", // ↑ antes 3m
 			"-out_json", filepath.Join(outDir, "videos_esc2.json"),
 			"-out_csv", filepath.Join(outDir, "videos_esc2.csv"),
 		), "PRIVATE /videos esc2")
@@ -384,7 +384,7 @@ func main() {
 		fmt.Println("Upload OK → video_id =", videoID)
 	}
 
-	// === Por-ID (ligeras) ===
+	// === Por-ID (ligeras; puedes subirlas si quieres) ===
 	// GET /videos/:id
 	err = goRunLoadtest(*loadtestPath, withCommon(
 		"-url", *apiBase+"/videos/"+videoID,
