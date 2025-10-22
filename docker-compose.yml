@@ -47,6 +47,9 @@ services:
       - ./backend/uploads:/app/uploads:rw
       - intro-data:/app/intro
       - logs-data:/app/logs
+    environment:
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-anb-app-videos-prod}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
     env_file:
       - .env
     depends_on:
@@ -66,6 +69,9 @@ services:
       - ./backend/uploads:/app/uploads:rw
       - intro-data:/app/intro
       - logs-data:/app/logs
+    environment:
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-anb-app-videos-prod}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
     env_file:
       - .env
     depends_on:

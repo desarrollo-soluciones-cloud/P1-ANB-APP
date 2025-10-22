@@ -3,6 +3,7 @@ package video
 import (
 	"mime/multipart"
 	"testing"
+	"time"
 
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
@@ -57,9 +58,19 @@ type MockStorageService struct {
 	mock.Mock
 }
 
-func (m *MockStorageService) Upload(file multipart.File, destinationPath string) error {
-	args := m.Called(file, destinationPath)
+func (m *MockStorageService) Upload(file multipart.File, s3Key string) error {
+	args := m.Called(file, s3Key)
 	return args.Error(0)
+}
+
+func (m *MockStorageService) Delete(s3Key string) error {
+	args := m.Called(s3Key)
+	return args.Error(0)
+}
+
+func (m *MockStorageService) GetPresignedURL(s3Key string, expiration time.Duration) (string, error) {
+	args := m.Called(s3Key, expiration)
+	return args.String(0), args.Error(1)
 }
 
 func TestVideoService(t *testing.T) {
@@ -171,16 +182,18 @@ func TestVideoService(t *testing.T) {
 			ID:          videoID,
 			UserID:      userID,
 			Status:      "uploaded",
-			OriginalURL: "/uploads/originals/test.mp4",
+			OriginalURL: "originals/test.mp4",
 		}
 
 		mockRepo.On("FindByID", videoID).Return(video, nil)
+		mockStorage.On("Delete", "originals/test.mp4").Return(nil)
 		mockRepo.On("Delete", videoID).Return(nil)
 
 		err := videoSvc.Delete(videoID, userID)
 
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
+		mockStorage.AssertExpectations(t)
 	})
 
 	t.Run("ListPublic_Success", func(t *testing.T) {
@@ -218,18 +231,23 @@ func TestVideoService(t *testing.T) {
 			UserID:      userID,
 			Title:       "Test Video",
 			Status:      "uploaded",
-			OriginalURL: "/uploads/originals/test-video.mov",
+			OriginalURL: "originals/test-video.mov",
 		}
 
 		mockRepo.On("FindByID", videoID).Return(video, nil)
+		mockStorage.On("GetPresignedURL", "originals/test-video.mov", time.Hour).Return("https://s3.amazonaws.com/presigned-url-original", nil)
+		mockStorage.On("GetPresignedURL", "processed/test-video.mp4", time.Hour).Return("https://s3.amazonaws.com/presigned-url-processed", nil)
 		mockRepo.On("Update", mock.AnythingOfType("*video.Video")).Return(nil)
 
 		result, err := videoSvc.MarkAsProcessed(videoID, userID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "processed", result.Status)
-		assert.Equal(t, "/uploads/processed/test-video.mp4", result.ProcessedURL)
+		// La respuesta contiene URLs presignadas de S3, no las claves
+		assert.Equal(t, "https://s3.amazonaws.com/presigned-url-processed", result.ProcessedURL)
+		assert.Equal(t, "https://s3.amazonaws.com/presigned-url-original", result.OriginalURL)
 		assert.NotNil(t, result.ProcessedAt)
 		mockRepo.AssertExpectations(t)
+		mockStorage.AssertExpectations(t)
 	})
 }

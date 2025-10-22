@@ -59,8 +59,9 @@ export class ListVideosComponent implements OnInit {
   normalizeUrl(url: string | undefined | null) {
     if (!url) return null;
     const s = String(url);
+    // URLs completas de S3 o cualquier URL externa
     if (s.startsWith('http://') || s.startsWith('https://')) return s;
-    // Para uploads, usar ruta relativa (manejada por nginx proxy)
+    // Para uploads locales (backward compatibility), usar ruta relativa
     if (s.startsWith('uploads/')) {
       return `/${s}`;
     }
@@ -73,10 +74,15 @@ export class ListVideosComponent implements OnInit {
     const url = type === 'processed' ? this.processedUrl(video) : this.originalUrl(video);
     if (!url) return null;
     
-    // Usar ruta relativa para evitar CORS (manejada por nginx proxy)
+    // URLs de S3 o completas se devuelven directamente
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    // Backward compatibility: rutas locales /uploads
     if (url.startsWith('/uploads') || url.startsWith('uploads')) {
       const cleanPath = url.startsWith('/') ? url : '/' + url;
-      return cleanPath; // Ruta relativa que nginx proxy manejará
+      return cleanPath;
     }
     
     return url;

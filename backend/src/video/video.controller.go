@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -123,52 +122,13 @@ func (vc *VideoController) GetVideoByID(c *gin.Context) {
 	c.JSON(http.StatusOK, video)
 }
 
+// Download endpoint no longer needed - videos are downloaded directly from S3 using presigned URLs
+// The presigned URLs in OriginalURL and ProcessedURL can be used directly for downloads
 func (vc *VideoController) Download(c *gin.Context) {
-	videoIDStr := c.Param("video_id")
-	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID format"})
-		return
-	}
-
-	userIDClaim, _ := c.Get("userID")
-	userID := userIDClaim.(uint)
-
-	video, err := vc.videoService.GetByID(uint(videoID), userID)
-	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Video not found"})
-			return
-		}
-		if strings.Contains(err.Error(), "permission") {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Not allowed to access this video"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-		return
-	}
-
-	// Query param 'type' can be 'original' or 'processed' (default: processed)
-	typ := c.DefaultQuery("type", "processed")
-	var publicPath string
-	if typ == "original" {
-		publicPath = video.OriginalURL
-	} else {
-		publicPath = video.ProcessedURL
-	}
-
-	if publicPath == "" || publicPath == "nil" {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Requested file not available"})
-		return
-	}
-
-	// publicPath is like /uploads/... -> map to filesystem
-	fsPath := strings.TrimPrefix(publicPath, "/")
-
-	// Serve file with attachment disposition
-	c.Header("Content-Description", "File Transfer")
-	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filepath.Base(fsPath)))
-	c.File(fsPath)
+	c.JSON(http.StatusGone, gin.H{
+		"error":   "This endpoint is deprecated",
+		"message": "Videos are now served directly from S3. Use the OriginalURL or ProcessedURL from the video details.",
+	})
 }
 
 func (vc *VideoController) DeleteVideo(c *gin.Context) {

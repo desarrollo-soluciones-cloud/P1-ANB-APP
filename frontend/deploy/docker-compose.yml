@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anb-frontend-prod
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    environment:
+      - BACKEND_URL=${BACKEND_URL:-http://44.198.15.64:9090}

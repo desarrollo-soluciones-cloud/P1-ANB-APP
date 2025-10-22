@@ -1,0 +1,82 @@
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    
+    # Evitar redirecciones automáticas
+    port_in_redirect off;
+    absolute_redirect off;
+
+    # Aumentar límite de tamaño de archivo para subida de videos
+    client_max_body_size 500M;
+    client_body_timeout 300s;
+    proxy_read_timeout 300s;
+    proxy_connect_timeout 300s;
+    proxy_send_timeout 300s;
+
+    # Configuración para Single Page Application (SPA)
+    location / {
+        try_files $uri $uri/ /index.html;
+        
+        # Headers adicionales para evitar cache en desarrollo
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    }
+    
+    # Evitar redirecciones automáticas para rutas específicas
+    location ~ ^/dashboard(?:/.*)?$ {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy para API requests al backend (usa variable de entorno)
+    location /api/ {
+        proxy_pass ${BACKEND_URL};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Configuración específica para uploads
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_max_temp_file_size 0;
+    }
+    
+    # Proxy para archivos de video - evita problemas CORS
+    # Ya no es necesario porque los videos están en S3, pero lo dejamos por compatibilidad
+    location /uploads/ {
+        proxy_pass ${BACKEND_URL}/uploads/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Headers específicos para videos
+        proxy_buffering off;
+        proxy_cache off;
+        
+        # Permitir range requests para video streaming
+        proxy_set_header Range $http_range;
+        proxy_set_header If-Range $http_if_range;
+        proxy_no_cache $http_range $http_if_range;
+    }
+
+    # Configuración para archivos estáticos
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Configuración de compresión
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    # Headers de seguridad
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+}

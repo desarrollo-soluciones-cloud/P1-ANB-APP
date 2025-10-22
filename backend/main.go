@@ -59,8 +59,22 @@ func main() {
 	userSvc := user.NewUserService(userRepo, authSvc)
 	userController := user.NewUserController(userSvc)
 
-	// Video
-	storageSvc := storage.NewLocalStorageService()
+	// Video - Initialize S3 Storage
+	s3Bucket := os.Getenv("S3_BUCKET_NAME")
+	if s3Bucket == "" {
+		log.Fatal("S3_BUCKET_NAME environment variable is required")
+	}
+	awsRegion := os.Getenv("AWS_REGION")
+	if awsRegion == "" {
+		awsRegion = "us-east-1" // Default region
+	}
+
+	storageSvc, err := storage.NewS3StorageService(s3Bucket, awsRegion)
+	if err != nil {
+		log.Fatalf("Failed to initialize S3 storage: %v", err)
+	}
+	log.Printf("S3 Storage initialized: bucket=%s, region=%s", s3Bucket, awsRegion)
+
 	videoRepo := video.NewVideoRepository(db)
 	videoSvc := video.NewVideoService(videoRepo, asynqClient, redisClient, storageSvc)
 	videoController := video.NewVideoController(videoSvc)
@@ -72,9 +86,7 @@ func main() {
 
 	router := gin.Default()
 
-	// Serve uploaded files publicly under /uploads
-	// e.g. GET /uploads/originals/xxx.mp4 will serve file ./uploads/originals/xxx.mp4
-	router.Static("/uploads", "./uploads")
+	// No longer serving static files - videos are served from S3 via presigned URLs
 
 	router.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
