@@ -322,9 +322,3 @@ Con GPU (2x g4dn.xlarge):             50,000 videos/día
 
 **Conclusión:** La implementación del Application Load Balancer con Auto Scaling Groups ha transformado el sistema de un worker único con degradación del 31% bajo carga, a una arquitectura escalable y estable capaz de procesar consistentemente 5+ videos/minuto con alta disponibilidad. El sistema está preparado para producción y puede escalar horizontalmente hasta 8 workers (20 videos/min) o verticalmente con GPUs (50+ videos/min) según las necesidades del negocio.
 
-
-ANEXO:
-
-
-
-
