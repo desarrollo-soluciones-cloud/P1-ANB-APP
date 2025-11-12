@@ -213,7 +213,7 @@ func getAnyVideoID(ctx context.Context, apiBase, token string) (string, error) {
 
 func main() {
 	// Flags
-	apiBase := flag.String("api_base", "http://anb-app-backend-alb-1587560747.us-east-1.elb.amazonaws.com:9090/api/v1", "Base de la API")
+	apiBase := flag.String("api_base", "http://34.207.169.60:9090/api/v1", "Base de la API")
 	email := flag.String("email", "carlos@anb.com", "Email para login")
 	password := flag.String("password", "password", "Password para login")
 	videoPath := flag.String("video_path", "", "Ruta a un archivo de video existente (requerido)")
@@ -275,15 +275,16 @@ func main() {
 		return a
 	}
 
-	// === [Ligero] POST /auth/login (INTENSIFICADO) ===
+	// === [Ligero] POST /auth/login ===
+	// AUMENTO: concurrency 30 (antes 25), rate 30 (antes 25), duration 60s (se mantiene fuerte)
 	err = goRunLoadtest(*loadtestPath, withCommon(
 		"-url", *apiBase+"/auth/login",
 		"-method", "POST",
 		"-headers", headersJSONPath,
 		"-body", loginBodyPath,
-		"-concurrency", "25", // ↑ antes 20
-		"-rate", "25", // ↑ antes 20
-		"-duration", "60s", // ↑ antes 50s
+		"-concurrency", "30", // AUMENTO
+		"-rate", "30", // AUMENTO
+		"-duration", "60s",
 		"-out_json", filepath.Join(outDir, "login_load.json"),
 		"-out_csv", filepath.Join(outDir, "login_load.csv"),
 	), "AUTH login (ligero)")
@@ -291,14 +292,15 @@ func main() {
 		fmt.Println("WARN:", err)
 	}
 
-	// === Escenario 1 (INTENSIFICADO) ===
-	// PUBLIC /public/videos
+	// === Escenario 1 ===
+	// GET /public/videos (moderado+)
+	// AUMENTO: concurrency 60 (antes 30), rate 90 (antes 40), duration 5m (antes 3m)
 	err = goRunLoadtest(*loadtestPath, withCommon(
 		"-url", *apiBase+"/public/videos",
 		"-method", "GET",
-		"-concurrency", "50", // ↑ antes 30
-		"-rate", "75", // ↑ antes 40
-		"-duration", "4m", // ↑ antes 3m
+		"-concurrency", "60", // AUMENTO
+		"-rate", "90", // AUMENTO
+		"-duration", "5m", // AUMENTO
 		"-out_json", filepath.Join(outDir, "public_videos_esc1.json"),
 		"-out_csv", filepath.Join(outDir, "public_videos_esc1.csv"),
 	), "PUBLIC /public/videos esc1")
@@ -306,14 +308,15 @@ func main() {
 		fmt.Println("WARN:", err)
 	}
 
-	// PRIVATE /videos (privado)
+	// GET /videos (privado) (moderado+)
+	// AUMENTO: concurrency 80 (antes 40), rate 110 (antes 60), duration 5m (antes 3m)
 	err = goRunLoadtest(*loadtestPath, withCommon(
 		"-url", *apiBase+"/videos",
 		"-method", "GET",
 		"-headers", headersAuthPath,
-		"-concurrency", "50", // ↑ antes 40
-		"-rate", "75", // ↑ antes 60
-		"-duration", "4m", // ↑ antes 3m
+		"-concurrency", "80", // AUMENTO
+		"-rate", "110", // AUMENTO
+		"-duration", "5m", // AUMENTO
 		"-out_json", filepath.Join(outDir, "videos_esc1.json"),
 		"-out_csv", filepath.Join(outDir, "videos_esc1.csv"),
 	), "PRIVATE /videos esc1")
@@ -321,39 +324,72 @@ func main() {
 		fmt.Println("WARN:", err)
 	}
 
-	// === Escenario 2 (INTENSIFICADO) ===
+	// === Escenario 2 ===
 	if *runEsc2 {
-		// PUBLIC /public/videos (alto)
+		// Plateau fuerte: PUBLIC @260 rps, conc 140, 7m
+		// AUMENTO sustancial vs entrega previa (120 rps, conc 60, 3m)
 		err = goRunLoadtest(*loadtestPath, withCommon(
 			"-url", *apiBase+"/public/videos",
 			"-method", "GET",
-			"-concurrency", "100", // ↑ antes 60
-			"-rate", "200", // ↑ antes 120
-			"-duration", "5m", // ↑ antes 3m
+			"-concurrency", "140", // AUMENTO
+			"-rate", "260", // AUMENTO
+			"-duration", "7m", // AUMENTO
 			"-out_json", filepath.Join(outDir, "public_videos_esc2.json"),
 			"-out_csv", filepath.Join(outDir, "public_videos_esc2.csv"),
-		), "PUBLIC /public/videos esc2")
+		), "PUBLIC /public/videos esc2 (plateau)")
 		if err != nil {
 			fmt.Println("WARN:", err)
 		}
 
-		// PRIVATE /videos (alto)
+		// Plateau fuerte: PRIVATE @220 rps, conc 120, 7m
+		// AUMENTO sustancial vs entrega previa (100 rps, conc 60, 3m)
 		err = goRunLoadtest(*loadtestPath, withCommon(
 			"-url", *apiBase+"/videos",
 			"-method", "GET",
 			"-headers", headersAuthPath,
-			"-concurrency", "85", // ↑ antes 60
-			"-rate", "170", // ↑ antes 100
-			"-duration", "5m", // ↑ antes 3m
+			"-concurrency", "120", // AUMENTO
+			"-rate", "220", // AUMENTO
+			"-duration", "7m", // AUMENTO
 			"-out_json", filepath.Join(outDir, "videos_esc2.json"),
 			"-out_csv", filepath.Join(outDir, "videos_esc2.csv"),
-		), "PRIVATE /videos esc2")
+		), "PRIVATE /videos esc2 (plateau)")
+		if err != nil {
+			fmt.Println("WARN:", err)
+		}
+
+		// Burst final: PUBLIC @320 rps, conc 160, 60s (misma Escenario 2, no es escenario nuevo)
+		// AUMENTO: añade una ráfaga para detectar saturación/elasticidad
+		err = goRunLoadtest(*loadtestPath, withCommon(
+			"-url", *apiBase+"/public/videos",
+			"-method", "GET",
+			"-concurrency", "160", // AUMENTO
+			"-rate", "320", // AUMENTO
+			"-duration", "60s", // AUMENTO (nuevo burst)
+			"-out_json", filepath.Join(outDir, "public_videos_esc2_burst.json"),
+			"-out_csv", filepath.Join(outDir, "public_videos_esc2_burst.csv"),
+		), "PUBLIC /public/videos esc2 (burst)")
+		if err != nil {
+			fmt.Println("WARN:", err)
+		}
+
+		// Burst final: PRIVATE @280 rps, conc 150, 60s
+		// AUMENTO: ráfaga equivalente en el endpoint privado
+		err = goRunLoadtest(*loadtestPath, withCommon(
+			"-url", *apiBase+"/videos",
+			"-method", "GET",
+			"-headers", headersAuthPath,
+			"-concurrency", "150", // AUMENTO
+			"-rate", "280", // AUMENTO
+			"-duration", "60s", // AUMENTO (nuevo burst)
+			"-out_json", filepath.Join(outDir, "videos_esc2_burst.json"),
+			"-out_csv", filepath.Join(outDir, "videos_esc2_burst.csv"),
+		), "PRIVATE /videos esc2 (burst)")
 		if err != nil {
 			fmt.Println("WARN:", err)
 		}
 	}
 
-	// === Upload con video real (OBLIGATORIO) ===
+	// === Upload con video real (OBLIGATORIO para por-id) ===
 	title := "LoadTest-" + nowStamp()
 	videoID, uploadRaw, err := uploadVideo(ctx, *apiBase, lr.AccessToken, *videoPath, title)
 	writeFile(filepath.Join(outDir, "upload_resp.json"), uploadRaw)
@@ -384,7 +420,7 @@ func main() {
 		fmt.Println("Upload OK → video_id =", videoID)
 	}
 
-	// === Por-ID (ligeras; puedes subirlas si quieres) ===
+	// === Pruebas por-ID (ligeras; se mantienen iguales) ===
 	// GET /videos/:id
 	err = goRunLoadtest(*loadtestPath, withCommon(
 		"-url", *apiBase+"/videos/"+videoID,
