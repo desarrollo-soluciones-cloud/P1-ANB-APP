@@ -52,7 +52,6 @@
 ---
 
 ## 3) Notas operativas
-- **Upload** no devuelve `id` directo; el `runner` resolvió el `video_id` vía *polling* por título (confirma flujo asíncrono).
 - Todas las ejecuciones fueron **en AWS**
 - Los CSV/JSON quedaron en la carpeta `resultados-YYYYMMDD-HHMMSS` generada por el `runner`.
 
