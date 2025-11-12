@@ -18,21 +18,14 @@ https://drive.google.com/file/d/1jyZLgtK4Ha-CYfT9oR9ODp-jG0nPtS9B/view?usp=drive
 
 https://drive.google.com/drive/folders/1KWCLaTHANyOGnqqDDBSkBzEqoW-9WYe6?usp=sharing
 
+## Link Video Entrega 3
+
+https://drive.google.com/drive/folders/1nFnT1uNvYGAMnevXR_JsidbAXz_FDDlK?usp=sharing
+
 ## Arquitectura del Sistema
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend API   │    │   PostgreSQL    │
-│   Angular 18    │───▶│   Go + Gin      │───▶│   Database      │
-│   Port 3001     │    │   Port 9090     │    │   Port 5432     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │
-                                ▼
-┌─────────────────┐    ┌─────────────────┐
-│   Redis Cache   │    │   Worker        │
-│   Port 6379     │◀───│   Video Process │
-└─────────────────┘    └─────────────────┘
-```
+<img width="1954" height="1143" alt="DiagramaServicios" src="https://github.com/user-attachments/assets/91e9561d-9b77-4f19-890a-ebb24989771c" />
+
 
 ## Tecnologías Principales
 
@@ -798,6 +791,8 @@ Se encuentra en la wiki del repo.
 
 **ANB - Asociación Nacional de Baloncesto v1.0**  
 *Sistema completo de gestión y votación de videos*
+
+
 
 
 

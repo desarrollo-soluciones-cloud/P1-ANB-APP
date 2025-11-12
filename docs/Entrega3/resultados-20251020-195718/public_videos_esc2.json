@@ -1,0 +1,18 @@
+{
+  "target": "http://anb-app-backend-alb-1587560747.us-east-1.elb.amazonaws.com:9090/api/v1/public/videos",
+  "method": "GET",
+  "duration": 300000000000,
+  "planned_rate_rps": 200,
+  "planned_concurrency": 100,
+  "total_requests": 48170,
+  "success_requests": 48170,
+  "error_requests": 0,
+  "success_rate": 100,
+  "throughput_rps": 160.56666666666666,
+  "latency_mean_ms": 621.4615817106085,
+  "p50_ms": 448.73,
+  "p90_ms": 1152.0060999999998,
+  "p95_ms": 1356.6617499999998,
+  "p99_ms": 2057.882489999998,
+  "latency_max_ms": 5371.923
+}

@@ -1,0 +1,18 @@
+{
+  "target": "http://34.207.169.60:9090/api/v1/videos/24/download",
+  "method": "GET",
+  "duration": 60000000000,
+  "planned_rate_rps": 20,
+  "planned_concurrency": 10,
+  "total_requests": 1198,
+  "success_requests": 1198,
+  "error_requests": 0,
+  "success_rate": 100,
+  "throughput_rps": 19.966666666666665,
+  "latency_mean_ms": 93.93297495826381,
+  "p50_ms": 83.634,
+  "p90_ms": 113.6469,
+  "p95_ms": 133.38105,
+  "p99_ms": 262.13687999999985,
+  "latency_max_ms": 488.836
+}
