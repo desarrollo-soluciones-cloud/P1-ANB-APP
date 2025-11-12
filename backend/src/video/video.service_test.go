@@ -1,12 +1,12 @@
 package video
 
 import (
+	"anb-app/src/queue"
+	"context"
 	"mime/multipart"
 	"testing"
 	"time"
 
-	"github.com/hibiken/asynq"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -73,13 +73,27 @@ func (m *MockStorageService) GetPresignedURL(s3Key string, expiration time.Durat
 	return args.String(0), args.Error(1)
 }
 
+// Mock para QueueClient
+type MockQueueClient struct {
+	mock.Mock
+}
+
+func (m *MockQueueClient) EnqueueTask(ctx context.Context, taskType string, payload queue.TaskPayload, maxRetry int, timeout time.Duration) (string, error) {
+	args := m.Called(ctx, taskType, payload, maxRetry, timeout)
+	return args.String(0), args.Error(1)
+}
+
+func (m *MockQueueClient) Close() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func TestVideoService(t *testing.T) {
 	t.Run("ListByUserID_Success", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
 		mockStorage := new(MockStorageService)
-		asynqClient := &asynq.Client{}
-		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
+		mockQueue := new(MockQueueClient)
+		videoSvc := NewVideoService(mockRepo, mockQueue, mockStorage)
 
 		userID := uint(1)
 		videos := []Video{
@@ -99,9 +113,8 @@ func TestVideoService(t *testing.T) {
 	t.Run("GetByID_Success", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
 		mockStorage := new(MockStorageService)
-		asynqClient := &asynq.Client{}
-		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
+		mockQueue := new(MockQueueClient)
+		videoSvc := NewVideoService(mockRepo, mockQueue, mockStorage)
 
 		videoID := uint(1)
 		userID := uint(1)
@@ -125,9 +138,8 @@ func TestVideoService(t *testing.T) {
 	t.Run("GetByID_NotFound", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
 		mockStorage := new(MockStorageService)
-		asynqClient := &asynq.Client{}
-		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
+		mockQueue := new(MockQueueClient)
+		videoSvc := NewVideoService(mockRepo, mockQueue, mockStorage)
 
 		videoID := uint(999)
 		userID := uint(1)
@@ -145,9 +157,8 @@ func TestVideoService(t *testing.T) {
 	t.Run("GetByID_PermissionDenied", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
 		mockStorage := new(MockStorageService)
-		asynqClient := &asynq.Client{}
-		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
+		mockQueue := new(MockQueueClient)
+		videoSvc := NewVideoService(mockRepo, mockQueue, mockStorage)
 
 		videoID := uint(1)
 		userID := uint(1)
@@ -172,9 +183,8 @@ func TestVideoService(t *testing.T) {
 	t.Run("Delete_Success", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
 		mockStorage := new(MockStorageService)
-		asynqClient := &asynq.Client{}
-		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
+		mockQueue := new(MockQueueClient)
+		videoSvc := NewVideoService(mockRepo, mockQueue, mockStorage)
 
 		videoID := uint(1)
 		userID := uint(1)
@@ -199,9 +209,8 @@ func TestVideoService(t *testing.T) {
 	t.Run("ListPublic_Success", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
 		mockStorage := new(MockStorageService)
-		asynqClient := &asynq.Client{}
-		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
+		mockQueue := new(MockQueueClient)
+		videoSvc := NewVideoService(mockRepo, mockQueue, mockStorage)
 
 		videos := []Video{
 			{ID: 1, Title: "Public Video 1", Status: "processed", VoteCount: 10},
@@ -220,9 +229,8 @@ func TestVideoService(t *testing.T) {
 	t.Run("MarkAsProcessed_Success", func(t *testing.T) {
 		mockRepo := new(MockVideoRepository)
 		mockStorage := new(MockStorageService)
-		asynqClient := &asynq.Client{}
-		redisClient := &redis.Client{}
-		videoSvc := NewVideoService(mockRepo, asynqClient, redisClient, mockStorage)
+		mockQueue := new(MockQueueClient)
+		videoSvc := NewVideoService(mockRepo, mockQueue, mockStorage)
 
 		videoID := uint(1)
 		userID := uint(1)

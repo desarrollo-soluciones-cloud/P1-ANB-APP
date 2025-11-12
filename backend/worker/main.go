@@ -1,13 +1,14 @@
 package main
 
 import (
+	"anb-app/src/queue"
 	"anb-app/src/video" // Importamos el paquete de video
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,7 +18,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/hibiken/asynq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -211,35 +211,27 @@ func (p *TaskProcessor) processVideo(videoRecord *video.Video) error {
 	return nil
 }
 
-func (p *TaskProcessor) HandleProcessVideoTask(ctx context.Context, t *asynq.Task) error {
-	var payload video.VideoProcessPayload
-	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
-		return fmt.Errorf("failed to unmarshal payload: %w", err)
-	}
+func (p *TaskProcessor) HandleProcessVideoTask(ctx context.Context, task *queue.Task) error {
+	log.Printf("--- WORKER: Processing task for video ID: %d ---", task.Payload.VideoID)
 
-	retryCount, _ := asynq.GetRetryCount(ctx)
-	maxRetry, _ := asynq.GetMaxRetry(ctx)
-	log.Printf("--- WORKER: Received task for video ID: %d (Retry: %d/%d) ---", payload.VideoID, retryCount, maxRetry)
-
-	videoRecord, err := p.videoRepo.FindByID(payload.VideoID)
+	videoRecord, err := p.videoRepo.FindByID(task.Payload.VideoID)
 	if err != nil || videoRecord == nil {
-		log.Printf("ERROR: Video %d not found, skipping retry.", payload.VideoID)
-		return asynq.SkipRetry
+		log.Printf("ERROR: Video %d not found", task.Payload.VideoID)
+		return fmt.Errorf("video not found: %w", err)
 	}
 
 	processingErr := p.processVideo(videoRecord)
 
 	if processingErr != nil {
-		log.Printf("ERROR processing video ID %d: %v", payload.VideoID, processingErr)
+		log.Printf("ERROR processing video ID %d: %v", task.Payload.VideoID, processingErr)
 
-		if retryCount >= maxRetry-1 {
-			log.Printf("Task for video ID %d has failed permanently. Updating status to 'failed'.", payload.VideoID)
-
-			videoRecord.Status = "failed"
-			if updateErr := p.videoRepo.Update(videoRecord); updateErr != nil {
-				return fmt.Errorf("task failed permanently and could not update status: %w (original error: %v)", updateErr, processingErr)
-			}
+		// Marcar como fallido en la base de datos si ya se reintentó muchas veces
+		// SQS manejará los reintentos automáticamente
+		videoRecord.Status = "failed"
+		if updateErr := p.videoRepo.Update(videoRecord); updateErr != nil {
+			return fmt.Errorf("task failed and could not update status: %w (original error: %v)", updateErr, processingErr)
 		}
+
 		return processingErr
 	}
 
@@ -263,7 +255,7 @@ func runFFmpegCommand(cmd *exec.Cmd) error {
 func main() {
 	log.Println("Conectando worker a PostgreSQL...")
 
-	// Conexión directa hardcodeada a PostgreSQL
+	// Conexión a PostgreSQL
 	db := connectPostgreSQL()
 	log.Println("Worker conectado a PostgreSQL exitosamente")
 
@@ -284,31 +276,81 @@ func main() {
 	s3Client := s3.NewFromConfig(cfg)
 	log.Printf("S3 Client initialized: bucket=%s, region=%s", s3Bucket, awsRegion)
 
-	// Redis desde variables de entorno
-	redisAddr := os.Getenv("REDIS_ADDR")
-	if redisAddr == "" {
-		redisAddr = "redis:6379"
+	// Inicializar SQS Consumer
+	sqsQueueURL := os.Getenv("SQS_QUEUE_URL")
+	if sqsQueueURL == "" {
+		log.Fatal("SQS_QUEUE_URL environment variable is required")
 	}
 
-	log.Printf("Configurando Asynq con Redis en: %s", redisAddr)
-	srv := asynq.NewServer(
-		asynq.RedisClientOpt{Addr: redisAddr},
-		asynq.Config{
-			Queues: map[string]int{
-				"default": 10,
-			},
-		},
-	)
+	sqsConsumer, err := queue.NewSQSConsumer(context.Background(), sqsQueueURL, awsRegion)
+	if err != nil {
+		log.Fatalf("Failed to initialize SQS consumer: %v", err)
+	}
+	defer sqsConsumer.Close()
+
+	log.Printf("SQS Consumer initialized: queue=%s", sqsQueueURL)
 
 	videoRepo := video.NewVideoRepository(db)
 	processor := NewTaskProcessor(db, videoRepo, s3Client, s3Bucket)
 
-	mux := asynq.NewServeMux()
-	mux.HandleFunc(video.TypeVideoProcess, processor.HandleProcessVideoTask)
-
 	log.Println(" ANB Worker is running and connected to PostgreSQL...")
-	log.Println(" Waiting for video processing tasks...")
-	if err := srv.Run(mux); err != nil {
-		log.Fatalf("could not run asynq server: %v", err)
+	log.Println(" Waiting for video processing tasks from SQS...")
+
+	// Iniciar servidor HTTP para health checks en un goroutine
+	go startHealthCheckServer()
+
+	// Loop infinito para recibir y procesar mensajes de SQS
+	for {
+		ctx := context.Background()
+
+		// Recibir tarea de SQS (long polling de 20 segundos)
+		task, err := sqsConsumer.ReceiveTask(ctx)
+		if err != nil {
+			log.Printf("Error receiving task from SQS: %v", err)
+			time.Sleep(5 * time.Second) // Esperar antes de reintentar
+			continue
+		}
+
+		// Si no hay mensajes, continuar esperando
+		if task == nil {
+			continue
+		}
+
+		// Procesar la tarea
+		log.Printf("Processing task: %s for video ID: %d", task.ID, task.Payload.VideoID)
+
+		processErr := processor.HandleProcessVideoTask(ctx, task)
+
+		if processErr != nil {
+			log.Printf("Task %s failed: %v", task.ID, processErr)
+			// Marcar como fallida (SQS lo reintentará)
+			if err := sqsConsumer.FailTask(ctx, task); err != nil {
+				log.Printf("Error marking task as failed: %v", err)
+			}
+		} else {
+			log.Printf("Task %s completed successfully", task.ID)
+			// Eliminar el mensaje de SQS
+			if err := sqsConsumer.CompleteTask(ctx, task); err != nil {
+				log.Printf("Error completing task: %v", err)
+			}
+		}
+	}
+}
+
+// startHealthCheckServer inicia un servidor HTTP simple para health checks del ALB
+func startHealthCheckServer() {
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
+	port := os.Getenv("HEALTH_CHECK_PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("Health check server listening on port %s", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatalf("Failed to start health check server: %v", err)
 	}
 }

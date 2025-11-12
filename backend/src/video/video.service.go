@@ -1,9 +1,9 @@
 package video
 
 import (
+	"anb-app/src/queue"
 	"anb-app/src/storage"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -13,8 +13,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hibiken/asynq"
-	"github.com/redis/go-redis/v9"
 )
 
 var ctx = context.Background()
@@ -22,10 +20,6 @@ var ctx = context.Background()
 const (
 	TypeVideoProcess = "task:video:process"
 )
-
-type VideoProcessPayload struct {
-	VideoID uint
-}
 
 type VideoRepository interface {
 	Create(video *Video) (*Video, error)
@@ -39,16 +33,14 @@ type VideoRepository interface {
 
 type videoService struct {
 	videoRepo   VideoRepository
-	asynqClient *asynq.Client
-	redisClient *redis.Client
+	queueClient queue.QueueClient
 	storageSvc  storage.StorageService
 }
 
-func NewVideoService(videoRepo VideoRepository, asynqClient *asynq.Client, redisClient *redis.Client, storageSvc storage.StorageService) VideoService {
+func NewVideoService(videoRepo VideoRepository, queueClient queue.QueueClient, storageSvc storage.StorageService) VideoService {
 	return &videoService{
 		videoRepo:   videoRepo,
-		asynqClient: asynqClient,
-		redisClient: redisClient,
+		queueClient: queueClient,
 		storageSvc:  storageSvc,
 	}
 }
@@ -101,24 +93,21 @@ func (s *videoService) Upload(ctx *gin.Context, req *UploadVideoRequest, fileHea
 		return nil, err
 	}
 
-	payload, err := json.Marshal(VideoProcessPayload{VideoID: createdVideo.ID})
-	if err != nil {
-		return nil, err
-	}
+	// Encolar tarea en SQS
+	payload := queue.TaskPayload{VideoID: createdVideo.ID}
 
-	task := asynq.NewTask(
+	taskID, err := s.queueClient.EnqueueTask(
+		context.Background(),
 		TypeVideoProcess,
 		payload,
-		asynq.MaxRetry(5),
-		asynq.Timeout(10*time.Minute),
+		5,              // maxRetry
+		10*time.Minute, // timeout
 	)
-
-	taskInfo, err := s.asynqClient.Enqueue(task)
 	if err != nil {
-
 		return nil, err
 	}
-	log.Printf("---> Enqueued task to process video ID: %d, Task ID: %s", createdVideo.ID, taskInfo.ID)
+
+	log.Printf("---> Enqueued task for video ID: %d, Task ID: %s", createdVideo.ID, taskID)
 
 	// Generate presigned URLs for response
 	originalPresignedURL := s.getPresignedURL(createdVideo.OriginalURL)
@@ -294,29 +283,12 @@ func (s *videoService) MarkAsProcessed(videoID uint, userID uint) (*VideoRespons
 }
 
 func (s *videoService) GetRankings() ([]RankingResponse, error) {
-	cacheKey := "rankings:videos" // Nueva clave de caché
-
-	cachedRankings, err := s.redisClient.Get(ctx, cacheKey).Result()
-	if err == nil {
-		var rankings []RankingResponse
-		json.Unmarshal([]byte(cachedRankings), &rankings)
-		return rankings, nil
-	}
-
-	if err != redis.Nil {
-		return nil, err
-	}
-
+	// Sin Redis, obtenemos rankings directamente de la DB
+	// En el futuro se puede implementar cache con ElastiCache si es necesario
 	rankings, err := s.videoRepo.GetRankings()
 	if err != nil {
 		return nil, err
 	}
-
-	jsonData, err := json.Marshal(rankings)
-	if err != nil {
-		return nil, err
-	}
-	s.redisClient.Set(ctx, cacheKey, jsonData, 2*time.Minute)
 
 	return rankings, nil
 }

@@ -1,21 +1,6 @@
 version: '3.8'
 
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: anb-redis-prod
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   worker:
     build:
       context: .
@@ -23,6 +8,8 @@ services:
     container_name: anb-worker-prod
     command: /app/worker_server
     restart: unless-stopped
+    ports:
+      - "8080:8080"  # Puerto para health checks
     env_file:
       - .env
     environment:
@@ -34,24 +21,20 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_SSLMODE=require
       
-      # Redis (Local en el mismo contenedor/red)
-      - REDIS_ADDR=redis:6379
+      # SQS Queue Configuration
+      - SQS_QUEUE_URL=${SQS_QUEUE_URL}
+      - AWS_REGION=${AWS_REGION}
       
       # S3 Storage
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - AWS_REGION=${AWS_REGION}
       
-      # AWS Credentials
+      # Health Check
+      - HEALTH_CHECK_PORT=8080
+      
+      # AWS Credentials (solo para AWS Academy - en producción usar IAM Role)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
-    depends_on:
-      redis:
-        condition: service_healthy
     volumes:
       # Volumen temporal para procesamiento (se limpia automáticamente)
       - /tmp:/tmp
-
-volumes:
-  redis-data:
-    driver: local
