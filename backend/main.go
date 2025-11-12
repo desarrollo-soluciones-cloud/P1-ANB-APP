@@ -3,6 +3,7 @@ package main
 import (
 	"anb-app/src/auth"
 	"anb-app/src/database"
+	"anb-app/src/queue"
 	"anb-app/src/storage"
 	"anb-app/src/user"
 	"anb-app/src/video"
@@ -12,9 +13,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hibiken/asynq"
 	"github.com/joho/godotenv"
-	"github.com/redis/go-redis/v9"
 )
 
 var ctx = context.Background()
@@ -30,25 +29,25 @@ func main() {
 	database.MigrateTables(db)
 
 	jwtSecret := os.Getenv("JWT_SECRET")
-
-	redisAddr := os.Getenv("REDIS_ADDR")
-
 	serverPort := os.Getenv("SERVER_PORT")
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: redisAddr,
-	})
-	if _, err := redisClient.Ping(ctx).Result(); err != nil {
-		log.Fatalf("Could not connect to Redis for caching: %v", err)
+	// Inicializar SQS Client
+	sqsQueueURL := os.Getenv("SQS_QUEUE_URL")
+	if sqsQueueURL == "" {
+		log.Fatal("SQS_QUEUE_URL environment variable is required")
 	}
-	defer redisClient.Close()
+	awsRegion := os.Getenv("AWS_REGION")
+	if awsRegion == "" {
+		awsRegion = "us-east-1"
+	}
 
-	log.Printf("Conectando a Redis en: %s", redisAddr)
-	redisOpt := asynq.RedisClientOpt{
-		Addr: redisAddr,
+	queueClient, err := queue.NewSQSClient(ctx, sqsQueueURL, awsRegion)
+	if err != nil {
+		log.Fatalf("Failed to initialize SQS client: %v", err)
 	}
-	asynqClient := asynq.NewClient(redisOpt)
-	defer asynqClient.Close()
+	defer queueClient.Close()
+
+	log.Printf("SQS Client connected: %s", sqsQueueURL)
 
 	// Auth
 	authSvc := auth.NewAuthService(jwtSecret)
@@ -64,19 +63,19 @@ func main() {
 	if s3Bucket == "" {
 		log.Fatal("S3_BUCKET_NAME environment variable is required")
 	}
-	awsRegion := os.Getenv("AWS_REGION")
-	if awsRegion == "" {
-		awsRegion = "us-east-1" // Default region
+	region := os.Getenv("AWS_REGION")
+	if region == "" {
+		region = "us-east-1" // Default region
 	}
 
-	storageSvc, err := storage.NewS3StorageService(s3Bucket, awsRegion)
+	storageSvc, err := storage.NewS3StorageService(s3Bucket, region)
 	if err != nil {
 		log.Fatalf("Failed to initialize S3 storage: %v", err)
 	}
-	log.Printf("S3 Storage initialized: bucket=%s, region=%s", s3Bucket, awsRegion)
+	log.Printf("S3 Storage initialized: bucket=%s, region=%s", s3Bucket, region)
 
 	videoRepo := video.NewVideoRepository(db)
-	videoSvc := video.NewVideoService(videoRepo, asynqClient, redisClient, storageSvc)
+	videoSvc := video.NewVideoService(videoRepo, queueClient, storageSvc)
 	videoController := video.NewVideoController(videoSvc)
 
 	// Vote
@@ -119,7 +118,7 @@ func main() {
 			"status":   "ok",
 			"message":  "ANB API is running",
 			"database": "connected",
-			"redis":    "connected",
+			"sqs":      "connected",
 		})
 	})
 
