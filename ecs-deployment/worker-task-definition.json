@@ -1,0 +1,47 @@
+{
+    "family": "anb-worker-task",
+    "taskRoleArn": "arn:aws:iam::058264411462:role/LabRole",
+    "executionRoleArn": "arn:aws:iam::058264411462:role/LabRole",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "1024",
+    "memory": "2048",
+    "containerDefinitions": [
+        {
+            "name": "worker",
+            "image": "058264411462.dkr.ecr.us-east-1.amazonaws.com/worker:v1",
+            "command": ["/app/worker_server"],
+            "cpu": 1024,
+            "memory": 2048,
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {"name": "DB_HOST", "value": "anb-db.c5qw86ak4rbl.us-east-1.rds.amazonaws.com"},
+                {"name": "DB_PORT", "value": "5432"},
+                {"name": "DB_USER", "value": "anb_user"},
+                {"name": "DB_NAME", "value": "anb_db"},
+                {"name": "DB_SSLMODE", "value": "require"},
+                {"name": "DB_PASSWORD", "value": "admin1234"},
+                {"name": "S3_BUCKET_NAME", "value": "anb-videos-prod-3"},
+                {"name": "AWS_REGION", "value": "us-east-1"},
+                {"name": "SQS_QUEUE_URL", "value": "https://sqs.us-east-1.amazonaws.com/058264411462/anb-video-processing-queue"},
+                {"name": "HEALTH_CHECK_PORT", "value": "8080"}
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/anb-worker",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "worker"
+                }
+            }
+        }
+    ]
+}
