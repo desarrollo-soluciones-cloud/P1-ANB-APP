@@ -44,13 +44,7 @@
 
 ---
 
-### 2.4 Escenario 2 – *Burst* (pico corto, 60 s)
-
-![Escenario 2-Burst](Burst.png)
-
----
-
-### 2.5 Por-ID (ligero, estabilidad funcional)
+### 2.4 Por-ID (ligero, estabilidad funcional)
 
 ![Por-ID Estabilidad funcional](Estabilidad%20funcional.png)
 
