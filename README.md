@@ -30,8 +30,8 @@ https://drive.google.com/drive/folders/1YuRrVT7tPMPV8mcHdCkdooBG0yrHawEI?usp=sha
 https://drive.google.com/drive/folders/1DFafXwDfWns9o8h-YmbQ0JvrQxMDrhdf?usp=sharing
 
 ## Arquitectura del Sistema
+<img width="1885" height="1033" alt="Screenshot 2025-11-30 172353" src="https://github.com/user-attachments/assets/26b8933d-412a-42fe-acc7-56ba8af0f5c2" />
 
-<img width="904" height="563" alt="image" src="https://github.com/user-attachments/assets/ad6ae9cf-a1b3-4863-ad7d-685d2ed8bc0d" />
 
 
 
@@ -799,6 +799,7 @@ Se encuentra en la wiki del repo.
 
 **ANB - Asociación Nacional de Baloncesto v1.0**  
 *Sistema completo de gestión y votación de videos*
+
 
 
 
