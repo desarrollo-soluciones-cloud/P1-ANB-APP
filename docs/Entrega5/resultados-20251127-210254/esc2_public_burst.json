@@ -1,0 +1,18 @@
+{
+  "target": "http://anb-backend-alb-713812655.us-east-1.elb.amazonaws.com/api/v1/public/videos",
+  "method": "GET",
+  "duration": 90000000000,
+  "planned_rate_rps": 520,
+  "planned_concurrency": 260,
+  "total_requests": 2080,
+  "success_requests": 0,
+  "error_requests": 2080,
+  "success_rate": 0,
+  "throughput_rps": 23.11111111111111,
+  "latency_mean_ms": 10074.894625961531,
+  "p50_ms": 10000.366,
+  "p90_ms": 10000.6,
+  "p95_ms": 10000.76505,
+  "p99_ms": 15000.19804,
+  "latency_max_ms": 15000.851
+}
